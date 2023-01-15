@@ -21,6 +21,7 @@ jobs:
       uses: actions/setup-java@v3.9.0
       with:
         java-version: "19.0.1"
+        distribution: 'adopt'
     - name: Verify Gradle Wrapper
       uses: gradle/wrapper-validation-action@v1.0.5
     - name: Execute build
