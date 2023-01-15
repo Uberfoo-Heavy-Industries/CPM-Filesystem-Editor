@@ -1,17 +1,18 @@
 package net.uberfoo.cpm.filesystem.editor;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableView;
+import javafx.scene.control.cell.TreeItemPropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.DiskParameterBlock;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 
 public class EditorController {
 
@@ -31,7 +32,17 @@ public class EditorController {
     @FXML
     private TreeTableView fileTree;
     @FXML
+    private TreeTableColumn nameColumn;
+    @FXML
+    private TreeTableColumn sizeColumn;
+    @FXML
     private BorderPane rootPane;
+
+    @FXML
+    public void initialize() {
+        nameColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("name"));
+        sizeColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("size"));
+    }
 
     @FXML
     protected void onFileMenuExitClick() {
@@ -45,7 +56,15 @@ public class EditorController {
         File file = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
         try {
             var channel = new RandomAccessFile(file, "rw").getChannel();
-            new CpmDisk(Z80RB_DPB, channel);
+            var disk = new CpmDisk(Z80RB_DPB, channel);
+            var root = new TreeItem<Object>(new CpmDiskTreeView(disk, "disk"));
+
+            disk.getFilesStream()
+                    .map(f -> new CpmFileTreeView(f))
+                    .map(f -> new TreeItem<Object>(f))
+                    .forEach(f -> root.getChildren().add(f));
+
+            fileTree.setRoot(root);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

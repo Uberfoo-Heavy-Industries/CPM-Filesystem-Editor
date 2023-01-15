@@ -3,7 +3,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.uberfoo.cpm.filesystem.editor.EditorController" fx:id="rootPane">
+<BorderPane xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.uberfoo.cpm.filesystem.editor.EditorController" fx:id="rootPane">
     <top>
         <MenuBar BorderPane.alignment="CENTER">
             <menus>
@@ -31,16 +31,12 @@
     <center>
         <ScrollPane fitToHeight="true" fitToWidth="true" BorderPane.alignment="CENTER">
             <content>
-<!--                <BorderPane BorderPane.alignment="CENTER">-->
-<!--                    <center>-->
-                        <TreeTableView fx:id="fileTree">
-                            <columns>
-                                <TreeTableColumn editable="false" prefWidth="75.0" sortable="false" text="C1" />
-                                <TreeTableColumn editable="false" prefWidth="75.0" text="C2" />
-                            </columns>
-                        </TreeTableView>
-<!--                    </center>-->
-<!--                </BorderPane>-->
+                <TreeTableView fx:id="fileTree">
+                    <columns>
+                        <TreeTableColumn fx:id="nameColumn" editable="false" prefWidth="75.0" sortable="false" text="" />
+                        <TreeTableColumn fx:id="sizeColumn" editable="false" prefWidth="75.0" text="Size" />
+                    </columns>
+                </TreeTableView>
             </content>
         </ScrollPane>
     </center>
