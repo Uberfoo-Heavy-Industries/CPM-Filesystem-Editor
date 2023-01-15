@@ -28,7 +28,10 @@ jobs:
     - name: Execute build
       uses: gradle/gradle-build-action@v2.3.3
       with:
-        arguments: jpackage
+        arguments: |
+          jpackage
+          --scan
+          --refresh-dependencies
       env:
         USERNAME: ${{ secrets.USERNAME }}
         TOKEN: ${{ secrets.TOKEN }}
