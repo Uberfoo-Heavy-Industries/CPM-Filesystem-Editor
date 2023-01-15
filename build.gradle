@@ -12,6 +12,14 @@ version '1.0.0'
 repositories {
     mavenCentral()
     mavenLocal()
+    maven {
+        name = "GitHubPackages"
+        url = "https://maven.pkg.github.com/Uberfoo-Heavy-Industries/z80utils"
+        credentials {
+            username = System.getenv("GITHUB_ACTOR")
+            password = System.getenv("GITHUB_TOKEN")
+        }
+    }
 }
 
 ext {
