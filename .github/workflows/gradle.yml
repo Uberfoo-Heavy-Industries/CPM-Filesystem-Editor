@@ -16,43 +16,42 @@ jobs:
     name: ${{ matrix.os }}
     steps:
     - name: Git checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3.3.0
     - name: Set up JDK
-      uses: actions/setup-java@v1
+      uses: actions/setup-java@v3.9.0
       with:
         java-version: "19.0.1"
-    - name: Echo JAVA_HOME
-      run: echo $JAVA_HOME
     - name: Verify Gradle Wrapper
-      uses: gradle/wrapper-validation-action@v1
+      uses: gradle/wrapper-validation-action@v1.0.5
     - name: Execute build
-      run: ./gradlew --stacktrace build
-    - name: Execute jlink
-      run: ./gradlew --stacktrace jlink
-    - name: Execute jpackage
-      run: ./gradlew --stacktrace jpackage
+      uses: gradle/gradle-build-action@v2.3.3
+      with:
+        arguments: jpackage
+      env:
+        USERNAME: ${{ secrets.USERNAME }}
+        TOKEN: ${{ secrets.TOKEN }}
     - name: Upload DMG as an artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3.1.2
       with:
         name: cpm-filesystem-editor-${{ matrix.os }}-dmg
         path: build/jpackage/*.dmg
     - name: Upload EXE as an artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3.1.2
       with:
         name: cpm-filesystem-editor-${{ matrix.os }}-exe
         path: build/jpackage/*.exe
     - name: Upload MSI as an artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3.1.2
       with:
         name: cpm-filesystem-editor-${{ matrix.os }}-msi
         path: build/jpackage/*.msi
     - name: Upload DEB as an artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3.1.2
       with:
         name: cpm-filesystem-editor-${{ matrix.os }}-deb
         path: build/jpackage/*.deb
     - name: Upload RPM as an artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3.1.2
       with:
         name: cpm-filesystem-editor-${{ matrix.os }}-rpm
         path: build/jpackage/*.rpm
