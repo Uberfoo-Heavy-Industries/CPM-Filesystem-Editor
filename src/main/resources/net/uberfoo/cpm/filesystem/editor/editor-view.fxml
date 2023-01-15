@@ -3,14 +3,14 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.uberfoo.cpm.filesystem.editor.EditorController" fx:id="rootPane">
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.uberfoo.cpm.filesystem.editor.EditorController">
     <top>
         <MenuBar BorderPane.alignment="CENTER">
             <menus>
                 <Menu mnemonicParsing="false" text="File">
                     <items>
                   <MenuItem mnemonicParsing="false" onAction="#onFileMenuOpenClick" text="Open" />
-                        <MenuItem mnemonicParsing="false" text="Close" />
+                        <MenuItem mnemonicParsing="false" onAction="#onFileMenuCloseClick" text="Close" />
                   <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#onFileMenuExitClick" text="Exit" />
                     </items>
@@ -31,7 +31,7 @@
     <center>
         <ScrollPane fitToHeight="true" fitToWidth="true" BorderPane.alignment="CENTER">
             <content>
-                <TreeTableView fx:id="fileTree">
+                <TreeTableView fx:id="fileTree" showRoot="false">
                     <columns>
                         <TreeTableColumn fx:id="nameColumn" editable="false" prefWidth="75.0" sortable="false" text="" />
                         <TreeTableColumn fx:id="sizeColumn" editable="false" prefWidth="75.0" text="Size" />

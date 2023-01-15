@@ -6,7 +6,7 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.StringProperty;
 import net.uberfoo.cpm.filesystem.AllocationTableFile;
 
-public class CpmFileTreeView {
+public class CpmFileTreeView implements CpmItemTreeView {
 
     private final AllocationTableFile file;
 

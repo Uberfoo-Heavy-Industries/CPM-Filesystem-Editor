@@ -13,6 +13,7 @@ import net.uberfoo.cpm.filesystem.DiskParameterBlock;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 
 public class EditorController {
 
@@ -38,10 +39,14 @@ public class EditorController {
     @FXML
     private BorderPane rootPane;
 
+    private TreeItem<CpmItemTreeView> root;
+
     @FXML
     public void initialize() {
         nameColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("name"));
         sizeColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("size"));
+        root = new TreeItem<>();
+        fileTree.setRoot(root);
     }
 
     @FXML
@@ -57,18 +62,24 @@ public class EditorController {
         try {
             var channel = new RandomAccessFile(file, "rw").getChannel();
             var disk = new CpmDisk(Z80RB_DPB, channel);
-            var root = new TreeItem<Object>(new CpmDiskTreeView(disk, "disk"));
+            var diskRoot = new TreeItem<CpmItemTreeView>(new CpmDiskTreeView(disk, file.getName(), channel));
 
             disk.getFilesStream()
                     .map(f -> new CpmFileTreeView(f))
-                    .map(f -> new TreeItem<Object>(f))
-                    .forEach(f -> root.getChildren().add(f));
+                    .map(f -> new TreeItem<CpmItemTreeView>(f))
+                    .forEach(f -> diskRoot.getChildren().add(f));
 
-            fileTree.setRoot(root);
+            root.getChildren().add(diskRoot);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-
+    @FXML
+    protected void onFileMenuCloseClick() throws IOException {
+         if (((TreeItem)fileTree.getFocusModel().getFocusedItem()).getValue() instanceof CpmDiskTreeView diskView) {
+             diskView.getChannel().close();
+             root.getChildren().remove(fileTree.getFocusModel().getFocusedItem());
+         }
+    }
 }
