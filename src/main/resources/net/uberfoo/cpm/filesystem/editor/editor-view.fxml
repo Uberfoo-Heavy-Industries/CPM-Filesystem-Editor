@@ -3,26 +3,29 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.uberfoo.cpm.filesystem.editor.EditorController">
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="net.uberfoo.cpm.filesystem.editor.EditorController">
     <top>
         <MenuBar BorderPane.alignment="CENTER">
             <menus>
                 <Menu mnemonicParsing="false" text="File">
                     <items>
-                  <MenuItem mnemonicParsing="false" onAction="#onFileMenuOpenClick" text="Open" />
-                        <MenuItem mnemonicParsing="false" onAction="#onFileMenuCloseClick" text="Close" />
-                  <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" onAction="#onFileMenuExitClick" text="Exit" />
+                        <MenuItem fx:id="openMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenClick"
+                                  text="Open"/>
+                        <MenuItem fx:id="closeMenuItem" disable="true" mnemonicParsing="false"
+                                  onAction="#onFileMenuCloseClick" text="Close"/>
+                        <SeparatorMenuItem mnemonicParsing="false"/>
+                        <MenuItem mnemonicParsing="false" onAction="#onFileMenuExitClick" text="Exit"/>
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Edit">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="Delete" />
+                        <MenuItem mnemonicParsing="false" text="Delete"/>
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="About" />
+                        <MenuItem mnemonicParsing="false" text="About"/>
                     </items>
                 </Menu>
             </menus>
@@ -33,9 +36,17 @@
             <content>
                 <TreeTableView fx:id="fileTree" showRoot="false">
                     <columns>
-                        <TreeTableColumn fx:id="nameColumn" editable="false" prefWidth="75.0" sortable="false" text="" />
-                        <TreeTableColumn fx:id="sizeColumn" editable="false" prefWidth="75.0" text="Size" />
+                        <TreeTableColumn fx:id="nameColumn" editable="false" prefWidth="147.0" text="Name">
+                        </TreeTableColumn>
+                        <TreeTableColumn fx:id="sizeColumn" editable="false" prefWidth="99.0" text="Size"/>
                     </columns>
+                    <contextMenu>
+                        <ContextMenu fx:id="treeContextMenu">
+                            <items>
+                                <MenuItem fx:id="treeContextMenuDeleteItem" onAction="#onContextMenuDeleteClick" mnemonicParsing="false" text="Delete"/>
+                            </items>
+                        </ContextMenu>
+                    </contextMenu>
                 </TreeTableView>
             </content>
         </ScrollPane>

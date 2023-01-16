@@ -3,9 +3,10 @@ package net.uberfoo.cpm.filesystem.editor;
 import javafx.beans.property.*;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 
+import java.io.IOException;
 import java.nio.channels.FileChannel;
 
-public class CpmDiskTreeView implements CpmItemTreeView {
+public class CpmDiskTreeView implements CpmItemTreeView, ClosableItem {
 
     private final CpmDisk disk;
     private final String name;
@@ -29,5 +30,18 @@ public class CpmDiskTreeView implements CpmItemTreeView {
 
     public FileChannel getChannel() {
         return channel;
+    }
+
+    public CpmDisk getDisk() {
+        return disk;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void close() throws IOException {
+        channel.close();
     }
 }
