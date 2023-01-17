@@ -3,20 +3,25 @@ package net.uberfoo.cpm.filesystem.editor;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableColumn;
-import javafx.scene.control.TreeTableView;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.TreeItemPropertyValueFactory;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.DiskParameterBlock;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.prefs.Preferences;
@@ -73,6 +78,36 @@ public class EditorController {
                         .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof DeletableItem))
                         .orElse(true));
 
+        fileTree.setRowFactory(view -> {
+            var row = new TreeTableRow();
+            row.setOnDragOver(e -> {
+                var dragBoard = e.getDragboard();
+                if (dragBoard.hasFiles()
+                        && row.getTreeItem() != null
+                        && row.getTreeItem().getValue() instanceof CpmDiskTreeView) {
+                    e.acceptTransferModes(TransferMode.COPY);
+                }
+                e.consume();
+            });
+            row.setOnDragDropped(e -> {
+                var dragBoard = e.getDragboard();
+                if (dragBoard.hasFiles()&& row.getTreeItem() != null
+                        && row.getTreeItem().getValue() instanceof CpmDiskTreeView diskTreeView) {
+                    var disk = diskTreeView.getDisk();
+                    copyFilesTo(row.getTreeItem(), dragBoard.getFiles());
+                }
+            });
+            return row;
+        });
+
+        fileTree.setOnDragOver(e -> {
+            var db = e.getDragboard();
+            if (db.hasFiles()) {
+                e.acceptTransferModes(TransferMode.COPY);
+            }
+            e.consume();
+        });
+
     }
 
     @FXML
@@ -97,7 +132,7 @@ public class EditorController {
 
             root.getChildren().add(diskRoot);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -106,6 +141,41 @@ public class EditorController {
                 .map(f -> new CpmFileTreeView(f, (CpmDiskTreeView) diskRoot.getValue()))
                 .map(f -> new TreeItem<CpmItemTreeView>(f))
                 .forEach(addTreeChild(diskRoot));
+    }
+
+    private static void copyFilesTo(TreeItem<CpmItemTreeView> diskRoot, List<File> files) {
+        var diskView = ((CpmDiskTreeView)diskRoot.getValue());
+        var disk = diskView.getDisk();
+        FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("copy-file-view.fxml"));
+        Stage stage = new Stage();
+        stage.setTitle("Copy file");
+        try {
+            stage.setScene(new Scene(fxmlLoader.load(),310, 143));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        var controller = (CopyFileController)fxmlLoader.getController();
+        // TODO: Support copying one file for now
+        controller.setNormalizedFilename(files.get(0).getName());
+        stage.showAndWait();
+
+        var filename = controller.getFilename();
+        var userNum = controller.getUserNumber();
+
+        // TODO: Support copying one file for now
+        try {
+            var channel = FileChannel.open(files.get(0).toPath(), StandardOpenOption.READ);
+            disk.createFile(filename, userNum, new BitSet(11),
+                    channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()));
+            disk.refresh();
+            diskRoot.getChildren().clear();
+            refreshDisk(diskRoot);
+        } catch (IOException e) {
+            e.printStackTrace();
+            var errDialog = new Alert(Alert.AlertType.ERROR, "A file error occurred!\n" + e.getMessage());
+            errDialog.showAndWait();
+        }
     }
 
     private static Consumer<TreeItem<CpmItemTreeView>> addTreeChild(TreeItem<CpmItemTreeView> diskRoot) {
