@@ -1,12 +1,6 @@
 package net.uberfoo.cpm.filesystem.editor;
 
 import javafx.application.Platform;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleListProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventType;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
@@ -29,9 +23,9 @@ public class SelectDpbDialog extends Dialog<DiskParameterBlockView> {
             DialogPane dialogPane = fxmlLoader.load();
 
             selectBox.getItems().addAll(items);
+            selectBox.setValue(items.get(0));
 
-//            dialogPane.lookupButton(ButtonType.CANCEL).addEventFilter(ActionEvent.ANY, this::onCancel);
-//            dialogPane.lookupButton(ButtonType.OK).addEventFilter(ActionEvent.ANY, this::onOk);
+            dialogPane.lookupButton(ButtonType.OK).disableProperty().bind(selectBox.valueProperty().map(x -> x == null));
 
             initModality(Modality.APPLICATION_MODAL);
 

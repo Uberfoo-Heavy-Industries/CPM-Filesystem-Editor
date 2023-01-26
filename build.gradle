@@ -80,7 +80,6 @@ jlink {
         uses 'org.apache.logging.log4j.core.util.WatchEventService'
         uses 'org.apache.logging.log4j.spi.Provider'
         uses 'org.apache.logging.log4j.message.ThreadDumpMessage.ThreadInfoFactory'
-        //excludeRequires 'javafx.base'
     }
     jpackage {
         if (org.gradle.internal.os.OperatingSystem.current().windows) {
