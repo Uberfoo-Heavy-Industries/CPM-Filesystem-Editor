@@ -1,9 +1,11 @@
 module net.uberfoo.cpm.filesystem.editor {
+    requires javafx.base;
     requires javafx.controls;
     requires javafx.fxml;
     requires java.prefs;
 
     requires org.kordamp.ikonli.javafx;
+    requires dirtyfx;
 
     requires net.uberfoo.cpm.cpmutils;
     requires org.apache.logging.log4j;
@@ -13,5 +15,5 @@ module net.uberfoo.cpm.filesystem.editor {
     requires com.fasterxml.jackson.dataformat.yaml;
 
     exports net.uberfoo.cpm.filesystem.editor;
-    opens net.uberfoo.cpm.filesystem.editor to javafx.fxml;
+    opens net.uberfoo.cpm.filesystem.editor to javafx.fxml,javafx.base;
 }

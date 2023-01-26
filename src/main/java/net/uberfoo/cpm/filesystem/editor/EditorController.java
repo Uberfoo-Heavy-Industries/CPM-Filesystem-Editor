@@ -1,7 +1,6 @@
 package net.uberfoo.cpm.filesystem.editor;
 
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -21,15 +20,17 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.prefs.Preferences;
+
+import static net.uberfoo.cpm.filesystem.DiskParameterBlock.createSkewTab;
 
 public class EditorController {
 
     public static final DiskParameterBlock Z80RB_DPB = new DiskParameterBlock(
             512,
+            128,
             5,
             31,
             1,
@@ -38,7 +39,23 @@ public class EditorController {
             240,
             0,
             0,
-            0
+            0,
+            new int[0]
+    );
+
+    public static final DiskParameterBlock OSBORNE_1_DPB = new DiskParameterBlock(
+            256,
+            20,
+            4,
+            15,
+            1,
+            45,
+            63,
+            0x80,
+            0x00,
+            0,
+            3,
+            createSkewTab(2, 10)
     );
 
     private final Preferences preferences = Preferences.userNodeForPackage(EditorController.class);
@@ -117,6 +134,16 @@ public class EditorController {
 
     @FXML
     protected void onFileMenuOpenClick() {
+        Stage stage = new Stage();
+
+        var selectDpbDialog = new SelectDpbDialog(stage,
+                List.of(new DiskParameterBlockView("Z80 Retro Badge", Z80RB_DPB),
+                        new DiskParameterBlockView("Osborne 1", OSBORNE_1_DPB)));
+        var result = selectDpbDialog.showAndWait();
+        if (result.isEmpty()) {
+            return;
+        }
+
         var fileChooser = new FileChooser();
         fileChooser.setTitle("Open Image");
         fileChooser.initialDirectoryProperty()
@@ -125,7 +152,7 @@ public class EditorController {
         if (file != null) preferences.put("LAST_PATH", file.getParentFile().getPath());
         try {
             var channel = new RandomAccessFile(file, "rw").getChannel();
-            var disk = new CpmDisk(Z80RB_DPB, channel);
+            var disk = new CpmDisk(result.get().toDiskParameterBlock(), channel);
             var diskRoot = new TreeItem<CpmItemTreeView>(new CpmDiskTreeView(disk, file.getName(), channel));
 
             refreshDisk(diskRoot);
@@ -153,6 +180,7 @@ public class EditorController {
             stage.setScene(new Scene(fxmlLoader.load(),310, 143));
         } catch (IOException e) {
             e.printStackTrace();
+            return;
         }
 
         var controller = (CopyFileController)fxmlLoader.getController();
