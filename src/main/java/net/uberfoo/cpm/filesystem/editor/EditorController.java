@@ -272,23 +272,29 @@ public class EditorController {
     }
 
     @FXML
-    protected void onContextMenuExportClick() throws IOException {
-        if (((TreeItem)fileTree.getFocusModel().getFocusedItem()).getValue() instanceof ExportableItem item) {
-            var fileChooser = new FileChooser();
-            fileChooser.setTitle("Export File");
-            fileChooser.initialDirectoryProperty()
-                    .setValue(Path.of(preferences.get("LAST_EXPORT_PATH", System.getProperty("user.home"))).toFile());
-            File file = fileChooser.showSaveDialog(rootPane.getScene().getWindow());
+    protected void onContextMenuExportClick() {
+        try {
+            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof ExportableItem item) {
+                var fileChooser = new FileChooser();
+                fileChooser.setTitle("Export File");
+                fileChooser.initialDirectoryProperty()
+                        .setValue(Path.of(preferences.get("LAST_EXPORT_PATH", System.getProperty("user.home"))).toFile());
+                File file = fileChooser.showSaveDialog(rootPane.getScene().getWindow());
 
-            if (file != null) preferences.put("LAST_EXPORT_PATH", file.getParentFile().getPath());
-            else return;
+                if (file != null) preferences.put("LAST_EXPORT_PATH", file.getParentFile().getPath());
+                else return;
 
-            if (file.exists()) {
-                Files.delete(file.toPath());
+                if (file.exists()) {
+                    Files.delete(file.toPath());
+                }
+
+                Files.write(Files.createFile(file.toPath()), item.retrieveFileContents().array(), StandardOpenOption.APPEND);
+
             }
-
-            Files.write(Files.createFile(file.toPath()), item.retrieveFileContents().array(), StandardOpenOption.APPEND);
-
+        } catch (FileAlreadyExistsException e) {
+            fileExistsAlert(e);
+        } catch (IOException e) {
+            fileErrorAlert(e);
         }
     }
 }
