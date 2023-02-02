@@ -17,6 +17,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.BitSet;
@@ -75,6 +77,9 @@ public class EditorController {
     @FXML
     private MenuItem treeContextMenuDeleteItem;
 
+    @FXML
+    private MenuItem treeContextMenuExportItem;
+
     private TreeItem<CpmItemTreeView> root;
 
     @FXML
@@ -93,6 +98,11 @@ public class EditorController {
         treeContextMenuDeleteItem.visibleProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
                         .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof DeletableItem))
+                        .orElse(true));
+
+        treeContextMenuExportItem.visibleProperty()
+                .bind(fileTree.getFocusModel().focusedItemProperty()
+                        .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof ExportableItem))
                         .orElse(true));
 
         fileTree.setRowFactory(view -> {
@@ -199,11 +209,21 @@ public class EditorController {
             disk.refresh();
             diskRoot.getChildren().clear();
             refreshDisk(diskRoot);
+        } catch (FileAlreadyExistsException e) {
+            fileExistsAlert(e);
         } catch (IOException e) {
-            e.printStackTrace();
-            var errDialog = new Alert(Alert.AlertType.ERROR, "A file error occurred!\n" + e.getMessage());
-            errDialog.showAndWait();
+            fileErrorAlert(e);
         }
+    }
+
+    private static void fileErrorAlert(IOException e) {
+        var errDialog = new Alert(Alert.AlertType.ERROR, "A file error occurred!\n" + e.getMessage());
+        errDialog.showAndWait();
+    }
+
+    private static void fileExistsAlert(FileAlreadyExistsException e) {
+        var errDialog = new Alert(Alert.AlertType.ERROR, "File already exists!\n" + e.getMessage());
+        errDialog.showAndWait();
     }
 
     private static Consumer<TreeItem<CpmItemTreeView>> addTreeChild(TreeItem<CpmItemTreeView> diskRoot) {
@@ -220,26 +240,55 @@ public class EditorController {
     }
 
     @FXML
-    protected void onFileMenuCloseClick() throws IOException {
-         if (((TreeItem)fileTree.getFocusModel().getFocusedItem()).getValue() instanceof CpmDiskTreeView diskView) {
-             diskView.getChannel().close();
-             root.getChildren().remove(fileTree.getFocusModel().getFocusedItem());
-         }
+    protected void onFileMenuCloseClick() {
+        try {
+            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof CpmDiskTreeView diskView) {
+                diskView.getChannel().close();
+                root.getChildren().remove(fileTree.getFocusModel().getFocusedItem());
+            }
+        } catch (IOException e) {
+            fileErrorAlert(e);
+        }
     }
 
     @FXML
-    protected void onContextMenuDeleteClick() throws IOException {
-        if (((TreeItem)fileTree.getFocusModel().getFocusedItem()).getValue() instanceof DeletableItem item) {
-            item.delete();
-            if (item instanceof CpmFileTreeView file) {
-                var parentTreeItem = root.getChildren()
-                        .stream()
-                        .filter(x -> x.getValue() == file.parent())
-                        .findFirst().orElseThrow();
-                parentTreeItem.getChildren().clear();
-                file.parent().getDisk().refresh();
-                refreshDisk(parentTreeItem);
+    protected void onContextMenuDeleteClick() {
+        try {
+            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof DeletableItem item) {
+                item.delete();
+                if (item instanceof CpmFileTreeView file) {
+                    var parentTreeItem = root.getChildren()
+                            .stream()
+                            .filter(x -> x.getValue() == file.parent())
+                            .findFirst().orElseThrow();
+                    parentTreeItem.getChildren().clear();
+                    file.parent().getDisk().refresh();
+                    refreshDisk(parentTreeItem);
+                }
             }
+        } catch (IOException e) {
+            fileErrorAlert(e);
+        }
+    }
+
+    @FXML
+    protected void onContextMenuExportClick() throws IOException {
+        if (((TreeItem)fileTree.getFocusModel().getFocusedItem()).getValue() instanceof ExportableItem item) {
+            var fileChooser = new FileChooser();
+            fileChooser.setTitle("Export File");
+            fileChooser.initialDirectoryProperty()
+                    .setValue(Path.of(preferences.get("LAST_EXPORT_PATH", System.getProperty("user.home"))).toFile());
+            File file = fileChooser.showSaveDialog(rootPane.getScene().getWindow());
+
+            if (file != null) preferences.put("LAST_EXPORT_PATH", file.getParentFile().getPath());
+            else return;
+
+            if (file.exists()) {
+                Files.delete(file.toPath());
+            }
+
+            Files.write(Files.createFile(file.toPath()), item.retrieveFileContents().array(), StandardOpenOption.APPEND);
+
         }
     }
 }

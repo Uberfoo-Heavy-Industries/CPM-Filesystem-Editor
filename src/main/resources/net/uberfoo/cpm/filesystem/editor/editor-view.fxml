@@ -44,6 +44,7 @@
                         <ContextMenu fx:id="treeContextMenu">
                             <items>
                                 <MenuItem fx:id="treeContextMenuDeleteItem" onAction="#onContextMenuDeleteClick" mnemonicParsing="false" text="Delete"/>
+                                <MenuItem fx:id="treeContextMenuExportItem" onAction="#onContextMenuExportClick" mnemonicParsing="false" text="Export"/>
                             </items>
                         </ContextMenu>
                     </contextMenu>
