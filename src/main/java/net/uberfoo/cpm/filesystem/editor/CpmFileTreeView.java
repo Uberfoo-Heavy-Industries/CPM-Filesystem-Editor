@@ -8,8 +8,9 @@ import net.uberfoo.cpm.filesystem.AllocationTableFile;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
-public record CpmFileTreeView(AllocationTableFile file, CpmDiskTreeView parent) implements CpmItemTreeView, DeletableItem {
+public record CpmFileTreeView(AllocationTableFile file, CpmDiskTreeView parent) implements CpmItemTreeView, DeletableItem, ExportableItem {
 
     public StringProperty nameProperty() {
         return new ReadOnlyStringWrapper(this, "name", file.getFilename());
@@ -24,4 +25,8 @@ public record CpmFileTreeView(AllocationTableFile file, CpmDiskTreeView parent) 
         file.delete();
     }
 
+    @Override
+    public ByteBuffer retrieveFileContents() {
+        return file.retrieveFileContents();
+    }
 }
