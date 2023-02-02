@@ -25,7 +25,7 @@ public class EditorApp extends Application {
         stage.setX(preferences.getDouble("WINDOW_X", 600));
         stage.setY(preferences.getDouble("WINDOW_Y", 600));
 
-        stage.getIcons().add(new Image(ClassLoader.getSystemClassLoader().getResourceAsStream("disc-drive.png")));
+        stage.getIcons().add(new Image(ClassLoader.getSystemClassLoader().getResourceAsStream("disc-drive-orange.png")));
         stage.setTitle("CP/M Filesystem Editor");
         stage.setScene(scene);
         stage.show();

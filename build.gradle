@@ -66,10 +66,10 @@ test {
 }
 
 jlink {
-    imageZip = project.file("${buildDir}/distributions/cpm-filesystem-editor-${javafx.platform.classifier}-${org.gradle.internal.os.OperatingSystem.current().nativePrefix}.zip")
+    imageZip = project.file("${buildDir}/distributions/cpm-filesystem-editor-${org.gradle.internal.os.OperatingSystem.current().nativePrefix}.zip")
     options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
     launcher {
-        name = 'CPM-Filesystem-Editor'
+        name = 'CPM-Filesystem-Editor-' + org.gradle.internal.os.OperatingSystem.current().nativePrefix
     }
     forceMerge "jackson-core", "jackson-annotations", "jackson-databind", "jackson-dataformat-yaml", "log4j-api", "slf4j-api", "log4j-slf4j2-impl", "dirtyfx"
     addExtraDependencies "javafx"
