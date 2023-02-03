@@ -6,4 +6,5 @@ public interface ExportableItem {
 
     ByteBuffer retrieveFileContents();
 
+    String getName();
 }

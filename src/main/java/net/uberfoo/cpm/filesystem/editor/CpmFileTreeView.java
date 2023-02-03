@@ -29,4 +29,9 @@ public record CpmFileTreeView(AllocationTableFile file, CpmDiskTreeView parent) 
     public ByteBuffer retrieveFileContents() {
         return file.retrieveFileContents();
     }
+
+    @Override
+    public String getName() {
+        return file.getFilename();
+    }
 }
