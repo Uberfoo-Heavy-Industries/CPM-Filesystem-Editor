@@ -4,19 +4,13 @@ import javafx.beans.property.*;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
+import java.util.BitSet;
 
-public class CpmDiskTreeView implements CpmItemTreeView, ClosableItem {
-
-    private final CpmDisk disk;
-    private final String name;
-    private final FileChannel channel;
-
-    public CpmDiskTreeView(CpmDisk disk, String name, FileChannel channel) {
-        this.disk = disk;
-        this.name = name;
-        this.channel = channel;
-    }
+public record CpmDiskTreeView(CpmDisk disk, String name,
+                              FileChannel channel) implements CpmItemTreeView, ClosableItem, AcceptsImports {
 
     @Override
     public StringProperty nameProperty() {
@@ -28,20 +22,13 @@ public class CpmDiskTreeView implements CpmItemTreeView, ClosableItem {
         return new ReadOnlyLongWrapper(this, "size", disk.getDpb().getFilesystemSize());
     }
 
-    public FileChannel getChannel() {
-        return channel;
-    }
-
-    public CpmDisk getDisk() {
-        return disk;
-    }
-
-    public String getName() {
-        return name;
-    }
-
     @Override
     public void close() throws IOException {
         channel.close();
+    }
+
+    @Override
+    public void importFile(ByteBuffer buffer, String filename, int userNum) throws IOException {
+        disk.createFile(filename, userNum, new BitSet(11), buffer);
     }
 }
