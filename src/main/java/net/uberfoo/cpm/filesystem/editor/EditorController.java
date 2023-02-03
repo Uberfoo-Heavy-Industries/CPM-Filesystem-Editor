@@ -277,6 +277,7 @@ public class EditorController {
             if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof ExportableItem item) {
                 var fileChooser = new FileChooser();
                 fileChooser.setTitle("Export File");
+                fileChooser.setInitialFileName(item.getName());
                 fileChooser.initialDirectoryProperty()
                         .setValue(Path.of(preferences.get("LAST_EXPORT_PATH", System.getProperty("user.home"))).toFile());
                 File file = fileChooser.showSaveDialog(rootPane.getScene().getWindow());
