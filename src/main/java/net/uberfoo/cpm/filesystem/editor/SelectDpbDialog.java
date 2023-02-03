@@ -27,6 +27,7 @@ public class SelectDpbDialog extends Dialog<DiskParameterBlockView> {
 
             dialogPane.lookupButton(ButtonType.OK).disableProperty().bind(selectBox.valueProperty().map(x -> x == null));
 
+            initOwner(owner);
             initModality(Modality.APPLICATION_MODAL);
 
             setResizable(false);

@@ -3,7 +3,6 @@ package net.uberfoo.cpm.filesystem.editor;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.*;
-import javafx.beans.value.ObservableBooleanValue;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -136,5 +135,9 @@ public class CopyFileController {
         var splitName = filename.split("\\.", 3);
         this.filename.set(splitName[0].substring(0,Math.min(8, splitName[0].length())).toUpperCase()
                 + (splitName.length > 1 ? "." + splitName[1].substring(0,Math.min(3, splitName[1].length())).toUpperCase() : ""));
+    }
+
+    public void setCopyButtonText(String text) {
+        copyButton.setText(text);
     }
 }
