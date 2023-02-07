@@ -1,16 +1,16 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.*;
+import javafx.beans.property.LongProperty;
+import javafx.beans.property.ReadOnlyLongWrapper;
+import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.StringProperty;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
 import java.util.BitSet;
 
-public record CpmDiskTreeView(CpmDisk disk, String name,
-                              FileChannel channel) implements CpmItemTreeView, ClosableItem, AcceptsImports, DiskItem {
+public record PartitionTreeView(CpmDisk disk, String name) implements CpmItemTreeView, AcceptsImports, DiskItem {
 
     @Override
     public StringProperty nameProperty() {
@@ -23,12 +23,8 @@ public record CpmDiskTreeView(CpmDisk disk, String name,
     }
 
     @Override
-    public void close() throws IOException {
-        channel.close();
-    }
-
-    @Override
     public void importFile(ByteBuffer buffer, String filename, int userNum) throws IOException {
         disk.createFile(filename, userNum, new BitSet(11), buffer);
     }
+
 }

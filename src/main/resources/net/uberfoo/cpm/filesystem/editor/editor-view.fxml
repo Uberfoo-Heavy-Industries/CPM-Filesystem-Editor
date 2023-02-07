@@ -12,15 +12,12 @@
                     <items>
                         <MenuItem fx:id="openMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenClick"
                                   text="Open"/>
+                        <MenuItem fx:id="openPartDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenPartDiskClick"
+                                  text="Open Partitioned Disk"/>
                         <MenuItem fx:id="closeMenuItem" disable="true" mnemonicParsing="false"
                                   onAction="#onFileMenuCloseClick" text="Close"/>
                         <SeparatorMenuItem mnemonicParsing="false"/>
                         <MenuItem mnemonicParsing="false" onAction="#onFileMenuExitClick" text="Exit"/>
-                    </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="Edit">
-                    <items>
-                        <MenuItem mnemonicParsing="false" text="Delete"/>
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">
