@@ -209,125 +209,6 @@ public class EditorController {
         }
     }
 
-    private static void refreshDisk(TreeItem<?> diskRoot) {
-        var expanded = diskRoot.isExpanded();
-        diskRoot.getChildren().clear();
-        try {
-            ((DiskItem)diskRoot.getValue()).disk().refresh();
-        } catch (IOException ioe) {
-            unexpectedAlert(ioe);
-            return;
-        }
-        ((DiskItem) diskRoot.getValue()).disk().getFilesStream()
-                .map(f -> new CpmFileTreeView(f, (DiskItem) diskRoot.getValue()))
-                .map(f -> new TreeItem<>(f))
-                .forEach(addTreeChild(diskRoot));
-        diskRoot.expandedProperty().set(expanded);
-    }
-
-    private static void refreshPartitionedDisk(TreeItem<?> diskRoot) {
-        var expanded = diskRoot.isExpanded();
-        diskRoot.getChildren().clear();
-        ((PartitionedDiskView) diskRoot.getValue()).partitionedDisk().getDisks().stream()
-                .map(d -> new PartitionTreeView(d.disk(), d.label()))
-                .map(d -> new TreeItem(d))
-                .forEach(t -> {
-                    refreshDisk(t);
-                    diskRoot.getChildren().add(t);
-                });
-        diskRoot.expandedProperty().set(expanded);
-    }
-
-    private void copyFilesToCpm(DiskItem diskView, List<File> files, String name) {
-        CopyFileController controller = getCopyFileController(files, name);
-
-        var filename = controller.getFilename();
-        var userNum = controller.getUserNumber();
-
-        // TODO: Support copying one file for now
-        copyFile(diskView, files.get(0), filename, userNum);
-    }
-
-    private static void copyFile(AcceptsImports disk, File file, String filename, int userNum) {
-        try {
-            var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
-            disk.importFile(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()), filename, userNum);
-        } catch (FileAlreadyExistsException e) {
-            fileExistsAlert(e);
-        } catch (IOException e) {
-            fileErrorAlert(e);
-        }
-    }
-
-    private CopyFileController getCopyFileController(List<File> files, String name) {
-        FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("copy-file-view.fxml"));
-        Stage stage = loadCopyFileView(name, fxmlLoader);
-
-        var controller = (CopyFileController) fxmlLoader.getController();
-        // TODO: Support copying one file for now
-        controller.setNormalizedFilename(files.get(0).getName());
-        controller.setCopyButtonText(name);
-        stage.showAndWait();
-        return controller;
-    }
-
-    private Stage loadCopyFileView(String title, FXMLLoader fxmlLoader) {
-        Stage stage = new Stage();
-        stage.setTitle(title + " file");
-        stage.initOwner(rootPane.getScene().getWindow());
-        stage.initModality(Modality.APPLICATION_MODAL);
-        try {
-            positionDialog(rootPane.getScene().getWindow(), stage, 310, 143);
-            stage.setScene(new Scene(fxmlLoader.load(), 310, 143));
-        } catch (IOException e) {
-            unexpectedAlert(e);
-            return null;
-        }
-        return stage;
-    }
-
-    private static void positionDialog(Window scene, Stage dialogStage, double width, double height) {
-        var x = scene.getX() + scene.getWidth() / 2 - width / 2;
-        var y = scene.getY() + scene.getHeight() / 2 - height / 2;
-        dialogStage.setY(y);
-        dialogStage.setX(x);
-    }
-
-    private static void positionDialog(Window scene, Dialog dialog, double width, double height) {
-        var x = scene.getX() + scene.getWidth() / 2 - width / 2;
-        var y = scene.getY() + scene.getHeight() / 2 - height / 2;
-        dialog.setY(y);
-        dialog.setX(x);
-    }
-
-    private static void fileErrorAlert(IOException e) {
-        var errDialog = new Alert(Alert.AlertType.ERROR, "A file error occurred!\n" + e.getMessage());
-        errDialog.showAndWait();
-    }
-
-    private static void fileExistsAlert(FileAlreadyExistsException e) {
-        var errDialog = new Alert(Alert.AlertType.ERROR, "File already exists!\n" + e.getMessage());
-        errDialog.showAndWait();
-    }
-
-    private static void unexpectedAlert(Exception e) {
-        var errDialog = new Alert(Alert.AlertType.ERROR, "Unexpected error: " + e.getMessage());
-        errDialog.showAndWait();
-    }
-
-    private static Consumer<TreeItem<CpmFileTreeView>> addTreeChild(TreeItem<?> diskRoot) {
-        return f -> {
-            var fileView = f.getValue();
-            var stat = fileView.file().getStat();
-            var userGroupRoot = (diskRoot.getChildren()).stream()
-                    .filter(x -> ((CpmUserGroupView) x.getValue()).getUserNumber() == stat)
-                    .findFirst()
-                    .orElse(new TreeItem(new CpmUserGroupView(stat)));
-            if (!diskRoot.getChildren().contains(userGroupRoot)) diskRoot.getChildren().add(userGroupRoot);
-            userGroupRoot.getChildren().add(f);
-        };
-    }
-
     @FXML
     protected void onFileMenuCloseClick() {
         try {
@@ -355,12 +236,6 @@ public class EditorController {
         } catch (NoSuchElementException e) {
             unexpectedAlert(e);
         }
-    }
-
-    private static void refreshFromDelete(CpmFileTreeView file, TreeItem<? extends CpmItemTreeView> parentTreeItem) throws IOException {
-        parentTreeItem.getChildren().clear();
-        file.parent().disk().refresh();
-        refreshDisk(parentTreeItem);
     }
 
     @FXML
@@ -407,6 +282,131 @@ public class EditorController {
             var treeItem = ((TreeItem<?>) fileTree.getFocusModel().getFocusedItem());
             refreshDisk(treeItem);
         }
+    }
+
+    private static void refreshDisk(TreeItem<?> diskRoot) {
+        var expanded = diskRoot.isExpanded();
+        diskRoot.getChildren().clear();
+        try {
+            ((DiskItem)diskRoot.getValue()).disk().refresh();
+        } catch (IOException ioe) {
+            unexpectedAlert(ioe);
+            return;
+        }
+        ((DiskItem) diskRoot.getValue()).disk().getFilesStream()
+                .map(f -> new CpmFileTreeView(f, (DiskItem) diskRoot.getValue()))
+                .map(f -> new TreeItem<>(f))
+                .forEach(addTreeChild(diskRoot));
+        diskRoot.expandedProperty().set(expanded);
+    }
+
+    private static void refreshPartitionedDisk(TreeItem<?> diskRoot) {
+        var expanded = diskRoot.isExpanded();
+        diskRoot.getChildren().clear();
+        ((PartitionedDiskView) diskRoot.getValue()).partitionedDisk().getDisks().stream()
+                .map(d -> new PartitionTreeView(d.disk(), d.label()))
+                .map(d -> new TreeItem(d))
+                .forEach(t -> {
+                    refreshDisk(t);
+                    diskRoot.getChildren().add(t);
+                });
+        diskRoot.expandedProperty().set(expanded);
+    }
+
+    private static void copyFile(AcceptsImports disk, File file, String filename, int userNum) {
+        try {
+            var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
+            disk.importFile(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()), filename, userNum);
+        } catch (FileAlreadyExistsException e) {
+            fileExistsAlert(e);
+        } catch (IOException e) {
+            fileErrorAlert(e);
+        }
+    }
+
+    private static void positionDialog(Window scene, Stage dialogStage, double width, double height) {
+        var x = scene.getX() + scene.getWidth() / 2 - width / 2;
+        var y = scene.getY() + scene.getHeight() / 2 - height / 2;
+        dialogStage.setY(y);
+        dialogStage.setX(x);
+    }
+
+    private static void positionDialog(Window scene, Dialog dialog, double width, double height) {
+        var x = scene.getX() + scene.getWidth() / 2 - width / 2;
+        var y = scene.getY() + scene.getHeight() / 2 - height / 2;
+        dialog.setY(y);
+        dialog.setX(x);
+    }
+
+    private static void fileErrorAlert(IOException e) {
+        var errDialog = new Alert(Alert.AlertType.ERROR, "A file error occurred!\n" + e.getMessage());
+        errDialog.showAndWait();
+    }
+
+    private static void fileExistsAlert(FileAlreadyExistsException e) {
+        var errDialog = new Alert(Alert.AlertType.ERROR, "File already exists!\n" + e.getMessage());
+        errDialog.showAndWait();
+    }
+
+    private static void unexpectedAlert(Exception e) {
+        var errDialog = new Alert(Alert.AlertType.ERROR, "Unexpected error: " + e.getMessage());
+        errDialog.showAndWait();
+    }
+
+    private static Consumer<TreeItem<CpmFileTreeView>> addTreeChild(TreeItem<?> diskRoot) {
+        return f -> {
+            var fileView = f.getValue();
+            var stat = fileView.file().getStat();
+            var userGroupRoot = (diskRoot.getChildren()).stream()
+                    .filter(x -> ((CpmUserGroupView) x.getValue()).getUserNumber() == stat)
+                    .findFirst()
+                    .orElse(new TreeItem(new CpmUserGroupView(stat)));
+            if (!diskRoot.getChildren().contains(userGroupRoot)) diskRoot.getChildren().add(userGroupRoot);
+            userGroupRoot.getChildren().add(f);
+        };
+    }
+
+    private static void refreshFromDelete(CpmFileTreeView file, TreeItem<? extends CpmItemTreeView> parentTreeItem) throws IOException {
+        parentTreeItem.getChildren().clear();
+        file.parent().disk().refresh();
+        refreshDisk(parentTreeItem);
+    }
+
+    private void copyFilesToCpm(DiskItem diskView, List<File> files, String name) {
+        CopyFileController controller = getCopyFileController(files, name);
+
+        var filename = controller.getFilename();
+        var userNum = controller.getUserNumber();
+
+        // TODO: Support copying one file for now
+        copyFile(diskView, files.get(0), filename, userNum);
+    }
+
+    private CopyFileController getCopyFileController(List<File> files, String name) {
+        FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("copy-file-view.fxml"));
+        Stage stage = loadCopyFileView(name, fxmlLoader);
+
+        var controller = (CopyFileController) fxmlLoader.getController();
+        // TODO: Support copying one file for now
+        controller.setNormalizedFilename(files.get(0).getName());
+        controller.setCopyButtonText(name);
+        stage.showAndWait();
+        return controller;
+    }
+
+    private Stage loadCopyFileView(String title, FXMLLoader fxmlLoader) {
+        Stage stage = new Stage();
+        stage.setTitle(title + " file");
+        stage.initOwner(rootPane.getScene().getWindow());
+        stage.initModality(Modality.APPLICATION_MODAL);
+        try {
+            positionDialog(rootPane.getScene().getWindow(), stage, 310, 143);
+            stage.setScene(new Scene(fxmlLoader.load(), 310, 143));
+        } catch (IOException e) {
+            unexpectedAlert(e);
+            return null;
+        }
+        return stage;
     }
 
 }
