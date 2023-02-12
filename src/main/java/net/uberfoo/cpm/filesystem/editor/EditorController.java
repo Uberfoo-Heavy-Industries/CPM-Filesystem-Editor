@@ -181,7 +181,7 @@ public class EditorController {
 
             root.getChildren().add((TreeItem)diskRoot);
         } catch (IOException e) {
-            unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(e);
         }
     }
 
@@ -203,9 +203,9 @@ public class EditorController {
 
             root.getChildren().add((TreeItem)diskRoot);
         } catch (IOException e) {
-            unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(e);
         } catch (ClassNotFoundException e) {
-            unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(e);
         }
     }
 
@@ -217,7 +217,7 @@ public class EditorController {
                 root.getChildren().remove(fileTree.getFocusModel().getFocusedItem());
             }
         } catch (IOException e) {
-            fileErrorAlert(e);
+            AlertDialogs.fileErrorAlert(e);
         }
     }
 
@@ -232,9 +232,9 @@ public class EditorController {
                 refreshFromDelete((CpmFileTreeView)item, parent);
             }
         } catch (IOException e) {
-            fileErrorAlert(e);
+            AlertDialogs.fileErrorAlert(e);
         } catch (NoSuchElementException e) {
-            unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(e);
         }
     }
 
@@ -260,9 +260,9 @@ public class EditorController {
 
             }
         } catch (FileAlreadyExistsException e) {
-            fileExistsAlert(e);
+            AlertDialogs.fileExistsAlert(e);
         } catch (IOException e) {
-            fileErrorAlert(e);
+            AlertDialogs.fileErrorAlert(e);
         }
     }
 
@@ -290,7 +290,7 @@ public class EditorController {
         try {
             ((DiskItem)diskRoot.getValue()).disk().refresh();
         } catch (IOException ioe) {
-            unexpectedAlert(ioe);
+            AlertDialogs.unexpectedAlert(ioe);
             return;
         }
         ((DiskItem) diskRoot.getValue()).disk().getFilesStream()
@@ -318,9 +318,9 @@ public class EditorController {
             var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
             disk.importFile(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()), filename, userNum);
         } catch (FileAlreadyExistsException e) {
-            fileExistsAlert(e);
+            AlertDialogs.fileExistsAlert(e);
         } catch (IOException e) {
-            fileErrorAlert(e);
+            AlertDialogs.fileErrorAlert(e);
         }
     }
 
@@ -336,21 +336,6 @@ public class EditorController {
         var y = scene.getY() + scene.getHeight() / 2 - height / 2;
         dialog.setY(y);
         dialog.setX(x);
-    }
-
-    private static void fileErrorAlert(IOException e) {
-        var errDialog = new Alert(Alert.AlertType.ERROR, "A file error occurred!\n" + e.getMessage());
-        errDialog.showAndWait();
-    }
-
-    private static void fileExistsAlert(FileAlreadyExistsException e) {
-        var errDialog = new Alert(Alert.AlertType.ERROR, "File already exists!\n" + e.getMessage());
-        errDialog.showAndWait();
-    }
-
-    private static void unexpectedAlert(Exception e) {
-        var errDialog = new Alert(Alert.AlertType.ERROR, "Unexpected error: " + e.getMessage());
-        errDialog.showAndWait();
     }
 
     private static Consumer<TreeItem<CpmFileTreeView>> addTreeChild(TreeItem<?> diskRoot) {
@@ -403,7 +388,7 @@ public class EditorController {
             positionDialog(rootPane.getScene().getWindow(), stage, 310, 143);
             stage.setScene(new Scene(fxmlLoader.load(), 310, 143));
         } catch (IOException e) {
-            unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(e);
             return null;
         }
         return stage;

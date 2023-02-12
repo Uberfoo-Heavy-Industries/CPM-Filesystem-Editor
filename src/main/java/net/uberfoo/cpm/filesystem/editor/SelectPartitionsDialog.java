@@ -3,21 +3,24 @@ package net.uberfoo.cpm.filesystem.editor;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.*;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.io.IOException;
 import java.util.List;
 
-public class SelectDpbDialog extends Dialog<DiskParameterBlockView> {
+public class SelectPartitionsDialog extends Dialog<DiskParameterBlockView> {
 
     @FXML
     private ChoiceBox<DiskParameterBlockView> selectBox;
 
-    public SelectDpbDialog(Window owner, List<DiskParameterBlockView> items) {
+    public SelectPartitionsDialog(Window owner, List<DiskParameterBlockView> items) {
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("select-dpb-view.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("select-partitions-view.fxml"));
             fxmlLoader.setController(this);
 
             DialogPane dialogPane = fxmlLoader.load();
