@@ -76,6 +76,8 @@ public class EditorController {
     @FXML
     private MenuItem openMenuItem;
     @FXML
+    private MenuItem openDiskMenuItem;
+    @FXML
     private MenuItem closeMenuItem;
     @FXML
     private MenuItem treeContextMenuDeleteItem;
@@ -282,6 +284,15 @@ public class EditorController {
             var treeItem = ((TreeItem<?>) fileTree.getFocusModel().getFocusedItem());
             refreshDisk(treeItem);
         }
+    }
+
+    @FXML
+    protected void onFileMenuOpenDiskClick() {
+        var list = PlatformDiskUtils.Windows.getDiskList();
+        var selectDiskDialog = new SelectDiskDialog(rootPane.getScene().getWindow(), list);
+        positionDialog(rootPane.getScene().getWindow(), selectDiskDialog, selectDiskDialog.getWidth(), selectDiskDialog.getHeight());
+        var result = selectDiskDialog.showAndWait();
+        System.out.println(result);
     }
 
     private static void refreshDisk(TreeItem<?> diskRoot) {

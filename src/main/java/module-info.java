@@ -15,6 +15,7 @@ module net.uberfoo.cpm.filesystem.editor {
     requires com.fasterxml.jackson.dataformat.yaml;
 
     requires org.slf4j;
+    requires com.sun.jna.platform;
 
     exports net.uberfoo.cpm.filesystem.editor;
     opens net.uberfoo.cpm.filesystem.editor to javafx.fxml,javafx.base;
