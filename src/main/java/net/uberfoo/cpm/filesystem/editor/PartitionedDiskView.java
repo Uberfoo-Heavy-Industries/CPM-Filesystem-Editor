@@ -6,10 +6,11 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.StringProperty;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
-public record PartitionedDiskView(String name, PartitionedDisk partitionedDisk, FileChannel channel) implements CpmItemTreeView, ClosableItem {
+public record PartitionedDiskView(String name, PartitionedDisk partitionedDisk, Closeable channel) implements CpmItemTreeView, ClosableItem {
 
     @Override
     public StringProperty nameProperty() {

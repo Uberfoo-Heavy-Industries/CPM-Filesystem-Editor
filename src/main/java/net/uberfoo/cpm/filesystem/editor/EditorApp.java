@@ -5,6 +5,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import jfxtras.styles.jmetro.JMetro;
+import jfxtras.styles.jmetro.Style;
+import org.aerofx.AeroFX;
 
 import java.util.prefs.Preferences;
 
@@ -21,6 +24,9 @@ public class EditorApp extends Application {
         scene = new Scene(fxmlLoader.load(),
                 preferences.getDouble("WIDTH", 640),
                 preferences.getDouble("HEIGHT", 480));
+
+        JMetro jMetro = new JMetro(Style.DARK);
+        jMetro.setScene(scene);
 
         stage.setX(preferences.getDouble("WINDOW_X", 600));
         stage.setY(preferences.getDouble("WINDOW_Y", 600));

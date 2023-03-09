@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<DialogPane prefHeight="110.0" prefWidth="444.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1">
+   <buttonTypes>
+      <ButtonType fx:constant="CANCEL" />
+   </buttonTypes>
+   <content>
+      <AnchorPane layoutY="20.0" prefHeight="20.0" prefWidth="240.0">
+         <children>
+            <ProgressBar id="progress" fx:id="progress" layoutX="107.0" layoutY="24.0" prefWidth="200.0" progress="0.0" />
+         </children>
+      </AnchorPane>
+   </content>
+</DialogPane>

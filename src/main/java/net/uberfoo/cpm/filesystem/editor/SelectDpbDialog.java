@@ -37,7 +37,7 @@ public class SelectDpbDialog extends Dialog<DiskParameterBlockView> {
 
             setOnShowing(dialogEvent -> Platform.runLater(() -> selectBox.requestFocus()));
         } catch (IOException e) {
-            AlertDialogs.unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(owner, e);
         }
 
     }

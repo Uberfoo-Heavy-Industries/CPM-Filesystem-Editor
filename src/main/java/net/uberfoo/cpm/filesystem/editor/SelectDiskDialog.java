@@ -13,12 +13,12 @@ import javafx.stage.Window;
 import java.io.IOException;
 import java.util.List;
 
-public class SelectDiskDialog extends Dialog<PlatformDiskUtils.OSDiskEntry> {
+public class SelectDiskDialog extends Dialog<PlatformDiskFactory.OSDiskEntry> {
 
     @FXML
-    private ChoiceBox<PlatformDiskUtils.OSDiskEntry> selectBox;
+    private ChoiceBox<PlatformDiskFactory.OSDiskEntry> selectBox;
 
-    public SelectDiskDialog(Window owner, List<PlatformDiskUtils.OSDiskEntry> items) {
+    public SelectDiskDialog(Window owner, List<PlatformDiskFactory.OSDiskEntry> items) {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("select-disk-view.fxml"));
             fxmlLoader.setController(this);
@@ -38,9 +38,13 @@ public class SelectDiskDialog extends Dialog<PlatformDiskUtils.OSDiskEntry> {
             setDialogPane(dialogPane);
             setResultConverter(buttonType -> buttonType == ButtonType.OK ? selectBox.getValue() : null);
 
-            setOnShowing(dialogEvent -> Platform.runLater(() -> selectBox.requestFocus()));
+            WindowUtil.positionDialog(owner, this, dialogPane.getWidth(), dialogPane.getHeight());
+
+            setOnShowing(dialogEvent -> Platform.runLater(() -> {
+                selectBox.requestFocus();
+            }));
         } catch (IOException e) {
-            AlertDialogs.unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(owner, e);
         }
 
     }
