@@ -18,7 +18,10 @@ public class ProgressDialog extends Dialog<Void> {
     @FXML
     private ProgressBar progress;
 
-    public ProgressDialog(Window owner) {
+    @FXML
+    private Label label;
+
+    public ProgressDialog(Window owner, long size) {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("progress-view.fxml"));
             fxmlLoader.setController(this);
@@ -34,7 +37,11 @@ public class ProgressDialog extends Dialog<Void> {
             setTitle("Loading");
             setDialogPane(dialogPane);
 
-
+            label.textProperty()
+                    .bind(progress.progressProperty().map(
+                            (x) -> (int)Math.floor(x.doubleValue() * 100)
+                                    + "% (" + (int)Math.floor(x.doubleValue() * size)
+                                    + " bytes)"));
 
         } catch (IOException e) {
             AlertDialogs.unexpectedAlert(owner, e);

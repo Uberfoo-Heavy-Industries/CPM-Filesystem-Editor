@@ -304,7 +304,7 @@ public class EditorController {
 
             ByteBuffer bb = ByteBuffer.allocate((int)selection.size());
 
-            var progressDialog = new ProgressDialog(rootPane.getScene().getWindow());
+            var progressDialog = new ProgressDialog(rootPane.getScene().getWindow(), selection.size());
             WindowUtil.positionDialog(rootPane.getScene().getWindow(), progressDialog, progressDialog.getWidth(), progressDialog.getHeight());
             progressDialog.show();
 
@@ -336,8 +336,10 @@ public class EditorController {
                 }
 
             };
+
             progressDialog.progressProperty().bind(task.progressProperty());
             progressDialog.setOnCloseRequest((x) -> task.cancel());
+
             new Thread(task).start();
 
         } catch (Exception e) {
