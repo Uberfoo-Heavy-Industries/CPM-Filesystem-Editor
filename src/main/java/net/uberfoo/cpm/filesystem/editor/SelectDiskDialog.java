@@ -3,21 +3,24 @@ package net.uberfoo.cpm.filesystem.editor;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.*;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.io.IOException;
 import java.util.List;
 
-public class SelectDpbDialog extends Dialog<DiskParameterBlockView> {
+public class SelectDiskDialog extends Dialog<PlatformDiskFactory.OSDiskEntry> {
 
     @FXML
-    private ChoiceBox<DiskParameterBlockView> selectBox;
+    private ChoiceBox<PlatformDiskFactory.OSDiskEntry> selectBox;
 
-    public SelectDpbDialog(Window owner, List<DiskParameterBlockView> items) {
+    public SelectDiskDialog(Window owner, List<PlatformDiskFactory.OSDiskEntry> items) {
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("select-dpb-view.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("select-disk-view.fxml"));
             fxmlLoader.setController(this);
 
             DialogPane dialogPane = fxmlLoader.load();
@@ -31,11 +34,15 @@ public class SelectDpbDialog extends Dialog<DiskParameterBlockView> {
             initModality(Modality.APPLICATION_MODAL);
 
             setResizable(false);
-            setTitle("Select Disk Parameters");
+            setTitle("Select Disk");
             setDialogPane(dialogPane);
             setResultConverter(buttonType -> buttonType == ButtonType.OK ? selectBox.getValue() : null);
 
-            setOnShowing(dialogEvent -> Platform.runLater(() -> selectBox.requestFocus()));
+            WindowUtil.positionDialog(owner, this, dialogPane.getWidth(), dialogPane.getHeight());
+
+            setOnShowing(dialogEvent -> Platform.runLater(() -> {
+                selectBox.requestFocus();
+            }));
         } catch (IOException e) {
             AlertDialogs.unexpectedAlert(owner, e);
         }

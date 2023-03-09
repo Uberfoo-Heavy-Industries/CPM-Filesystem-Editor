@@ -1,6 +1,7 @@
 package net.uberfoo.cpm.filesystem.editor;
 
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -11,14 +12,15 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.DiskParameterBlock;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -26,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Random;
 import java.util.function.Consumer;
 import java.util.prefs.Preferences;
 
@@ -75,6 +78,8 @@ public class EditorController {
     private BorderPane rootPane;
     @FXML
     private MenuItem openMenuItem;
+    @FXML
+    private MenuItem openDiskMenuItem;
     @FXML
     private MenuItem closeMenuItem;
     @FXML
@@ -158,7 +163,7 @@ public class EditorController {
         var selectDpbDialog = new SelectDpbDialog(rootPane.getScene().getWindow(),
                 List.of(new DiskParameterBlockView("Z80 Retro Badge", Z80RB_DPB),
                         new DiskParameterBlockView("Osborne 1", OSBORNE_1_DPB)));
-        positionDialog(rootPane.getScene().getWindow(), selectDpbDialog, selectDpbDialog.getWidth(), selectDpbDialog.getHeight());
+        WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectDpbDialog, selectDpbDialog.getWidth(), selectDpbDialog.getHeight());
         var result = selectDpbDialog.showAndWait();
         if (result.isEmpty()) {
             return;
@@ -181,7 +186,7 @@ public class EditorController {
 
             root.getChildren().add((TreeItem)diskRoot);
         } catch (IOException e) {
-            unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
         }
     }
 
@@ -193,139 +198,21 @@ public class EditorController {
                 .setValue(Path.of(preferences.get("LAST_PART_DISK_PATH", System.getProperty("user.home"))).toFile());
         File file = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
         if (file != null) preferences.put("LAST_PART_DISK_PATH", file.getParentFile().getPath());
-
         try {
             var channel = new RandomAccessFile(file, "rw").getChannel();
             var disk = new PartitionedDisk(channel.map(FileChannel.MapMode.READ_WRITE, 0, channel.size()));
-            var diskRoot = new TreeItem<>(new PartitionedDiskView(file.getName(), disk, channel));
-
-            refreshPartitionedDisk(diskRoot);
-
-            root.getChildren().add((TreeItem)diskRoot);
+            openPartitionDisk(disk, file.getName(), channel);
         } catch (IOException e) {
-            unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
         } catch (ClassNotFoundException e) {
-            unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
         }
     }
 
-    private static void refreshDisk(TreeItem<?> diskRoot) {
-        var expanded = diskRoot.isExpanded();
-        diskRoot.getChildren().clear();
-        try {
-            ((DiskItem)diskRoot.getValue()).disk().refresh();
-        } catch (IOException ioe) {
-            unexpectedAlert(ioe);
-            return;
-        }
-        ((DiskItem) diskRoot.getValue()).disk().getFilesStream()
-                .map(f -> new CpmFileTreeView(f, (DiskItem) diskRoot.getValue()))
-                .map(f -> new TreeItem<>(f))
-                .forEach(addTreeChild(diskRoot));
-        diskRoot.expandedProperty().set(expanded);
-    }
-
-    private static void refreshPartitionedDisk(TreeItem<?> diskRoot) {
-        var expanded = diskRoot.isExpanded();
-        diskRoot.getChildren().clear();
-        ((PartitionedDiskView) diskRoot.getValue()).partitionedDisk().getDisks().stream()
-                .map(d -> new PartitionTreeView(d.disk(), d.label()))
-                .map(d -> new TreeItem(d))
-                .forEach(t -> {
-                    refreshDisk(t);
-                    diskRoot.getChildren().add(t);
-                });
-        diskRoot.expandedProperty().set(expanded);
-    }
-
-    private void copyFilesToCpm(DiskItem diskView, List<File> files, String name) {
-        CopyFileController controller = getCopyFileController(files, name);
-
-        var filename = controller.getFilename();
-        var userNum = controller.getUserNumber();
-
-        // TODO: Support copying one file for now
-        copyFile(diskView, files.get(0), filename, userNum);
-    }
-
-    private static void copyFile(AcceptsImports disk, File file, String filename, int userNum) {
-        try {
-            var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
-            disk.importFile(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()), filename, userNum);
-        } catch (FileAlreadyExistsException e) {
-            fileExistsAlert(e);
-        } catch (IOException e) {
-            fileErrorAlert(e);
-        }
-    }
-
-    private CopyFileController getCopyFileController(List<File> files, String name) {
-        FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("copy-file-view.fxml"));
-        Stage stage = loadCopyFileView(name, fxmlLoader);
-
-        var controller = (CopyFileController) fxmlLoader.getController();
-        // TODO: Support copying one file for now
-        controller.setNormalizedFilename(files.get(0).getName());
-        controller.setCopyButtonText(name);
-        stage.showAndWait();
-        return controller;
-    }
-
-    private Stage loadCopyFileView(String title, FXMLLoader fxmlLoader) {
-        Stage stage = new Stage();
-        stage.setTitle(title + " file");
-        stage.initOwner(rootPane.getScene().getWindow());
-        stage.initModality(Modality.APPLICATION_MODAL);
-        try {
-            positionDialog(rootPane.getScene().getWindow(), stage, 310, 143);
-            stage.setScene(new Scene(fxmlLoader.load(), 310, 143));
-        } catch (IOException e) {
-            unexpectedAlert(e);
-            return null;
-        }
-        return stage;
-    }
-
-    private static void positionDialog(Window scene, Stage dialogStage, double width, double height) {
-        var x = scene.getX() + scene.getWidth() / 2 - width / 2;
-        var y = scene.getY() + scene.getHeight() / 2 - height / 2;
-        dialogStage.setY(y);
-        dialogStage.setX(x);
-    }
-
-    private static void positionDialog(Window scene, Dialog dialog, double width, double height) {
-        var x = scene.getX() + scene.getWidth() / 2 - width / 2;
-        var y = scene.getY() + scene.getHeight() / 2 - height / 2;
-        dialog.setY(y);
-        dialog.setX(x);
-    }
-
-    private static void fileErrorAlert(IOException e) {
-        var errDialog = new Alert(Alert.AlertType.ERROR, "A file error occurred!\n" + e.getMessage());
-        errDialog.showAndWait();
-    }
-
-    private static void fileExistsAlert(FileAlreadyExistsException e) {
-        var errDialog = new Alert(Alert.AlertType.ERROR, "File already exists!\n" + e.getMessage());
-        errDialog.showAndWait();
-    }
-
-    private static void unexpectedAlert(Exception e) {
-        var errDialog = new Alert(Alert.AlertType.ERROR, "Unexpected error: " + e.getMessage());
-        errDialog.showAndWait();
-    }
-
-    private static Consumer<TreeItem<CpmFileTreeView>> addTreeChild(TreeItem<?> diskRoot) {
-        return f -> {
-            var fileView = f.getValue();
-            var stat = fileView.file().getStat();
-            var userGroupRoot = (diskRoot.getChildren()).stream()
-                    .filter(x -> ((CpmUserGroupView) x.getValue()).getUserNumber() == stat)
-                    .findFirst()
-                    .orElse(new TreeItem(new CpmUserGroupView(stat)));
-            if (!diskRoot.getChildren().contains(userGroupRoot)) diskRoot.getChildren().add(userGroupRoot);
-            userGroupRoot.getChildren().add(f);
-        };
+    private void openPartitionDisk(PartitionedDisk disk, String name, Closeable channel) {
+        var diskRoot = new TreeItem<>(new PartitionedDiskView(name, disk, channel));
+        refreshPartitionedDisk(diskRoot);
+        root.getChildren().add((TreeItem)diskRoot);
     }
 
     @FXML
@@ -336,7 +223,7 @@ public class EditorController {
                 root.getChildren().remove(fileTree.getFocusModel().getFocusedItem());
             }
         } catch (IOException e) {
-            fileErrorAlert(e);
+            AlertDialogs.fileErrorAlert(rootPane.getScene().getWindow(), e);
         }
     }
 
@@ -351,16 +238,10 @@ public class EditorController {
                 refreshFromDelete((CpmFileTreeView)item, parent);
             }
         } catch (IOException e) {
-            fileErrorAlert(e);
+            AlertDialogs.fileErrorAlert(rootPane.getScene().getWindow(), e);
         } catch (NoSuchElementException e) {
-            unexpectedAlert(e);
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
         }
-    }
-
-    private static void refreshFromDelete(CpmFileTreeView file, TreeItem<? extends CpmItemTreeView> parentTreeItem) throws IOException {
-        parentTreeItem.getChildren().clear();
-        file.parent().disk().refresh();
-        refreshDisk(parentTreeItem);
     }
 
     @FXML
@@ -385,9 +266,9 @@ public class EditorController {
 
             }
         } catch (FileAlreadyExistsException e) {
-            fileExistsAlert(e);
+            AlertDialogs.fileExistsAlert(rootPane.getScene().getWindow(), e);
         } catch (IOException e) {
-            fileErrorAlert(e);
+            AlertDialogs.fileErrorAlert(rootPane.getScene().getWindow(), e);
         }
     }
 
@@ -407,6 +288,162 @@ public class EditorController {
             var treeItem = ((TreeItem<?>) fileTree.getFocusModel().getFocusedItem());
             refreshDisk(treeItem);
         }
+    }
+
+    @FXML
+    protected void onFileMenuOpenDiskClick() {
+        try {
+            var list = PlatformDiskUtils.Windows.getDiskList();
+            var selectDiskDialog = new SelectDiskDialog(rootPane.getScene().getWindow(), list);
+            WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectDiskDialog, selectDiskDialog.getWidth(), selectDiskDialog.getHeight());
+            var result = selectDiskDialog.showAndWait();
+            System.out.println(result);
+
+            var selection = result.orElseThrow(() -> new Exception("Invalid Selection"));
+            var addr = selection.address();
+
+            ByteBuffer bb = ByteBuffer.allocate((int)selection.size());
+
+            var progressDialog = new ProgressDialog(rootPane.getScene().getWindow());
+            WindowUtil.positionDialog(rootPane.getScene().getWindow(), progressDialog, progressDialog.getWidth(), progressDialog.getHeight());
+            progressDialog.show();
+
+            var disk = PlatformDiskFactory.getInstance().getDisk(selection);
+
+            Task task = new Task<Void>() {
+                @Override
+                protected Void call() throws Exception {
+                    try (var reader = disk.openReader()) {
+                        long sum = 0;
+                        while (sum < selection.size()) {
+                            var block = reader.read();
+                            sum += block.length;
+                            bb.put(block);
+                            updateProgress(sum, selection.size());
+                            if (isCancelled()) {
+                                return null;
+                            }
+                        }
+                        PartitionedDisk partitionedDisk = new PartitionedDisk(bb.rewind());
+                        openPartitionDisk(partitionedDisk, addr, () -> {});
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
+                    } finally {
+                        Platform.runLater(() -> progressDialog.close());
+                    }
+                    return null;
+                }
+
+            };
+            progressDialog.progressProperty().bind(task.progressProperty());
+            progressDialog.setOnCloseRequest((x) -> task.cancel());
+            new Thread(task).start();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
+        }
+    }
+
+    private void refreshDisk(TreeItem<?> diskRoot) {
+        var expanded = diskRoot.isExpanded();
+        diskRoot.getChildren().clear();
+        try {
+            ((DiskItem)diskRoot.getValue()).disk().refresh();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), ioe);
+            return;
+        }
+        ((DiskItem) diskRoot.getValue()).disk().getFilesStream()
+                .map(f -> new CpmFileTreeView(f, (DiskItem) diskRoot.getValue()))
+                .map(f -> new TreeItem<>(f))
+                .forEach(addTreeChild(diskRoot));
+        diskRoot.expandedProperty().set(expanded);
+    }
+
+    private void refreshPartitionedDisk(TreeItem<?> diskRoot) {
+        var expanded = diskRoot.isExpanded();
+        diskRoot.getChildren().clear();
+        ((PartitionedDiskView) diskRoot.getValue()).partitionedDisk().getDisks().stream()
+                .map(d -> new PartitionTreeView(d.disk(), d.label()))
+                .map(d -> new TreeItem(d))
+                .forEach(t -> {
+                    refreshDisk(t);
+                    diskRoot.getChildren().add(t);
+                });
+        diskRoot.expandedProperty().set(expanded);
+    }
+
+    private void copyFile(AcceptsImports disk, File file, String filename, int userNum) {
+        try {
+            var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
+            disk.importFile(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()), filename, userNum);
+        } catch (FileAlreadyExistsException e) {
+            e.printStackTrace();
+            AlertDialogs.fileExistsAlert(rootPane.getScene().getWindow(), e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            AlertDialogs.fileErrorAlert(rootPane.getScene().getWindow(), e);
+        }
+    }
+
+    private static Consumer<TreeItem<CpmFileTreeView>> addTreeChild(TreeItem<?> diskRoot) {
+        return f -> {
+            var fileView = f.getValue();
+            var stat = fileView.file().getStat();
+            var userGroupRoot = (diskRoot.getChildren()).stream()
+                    .filter(x -> ((CpmUserGroupView) x.getValue()).getUserNumber() == stat)
+                    .findFirst()
+                    .orElse(new TreeItem(new CpmUserGroupView(stat)));
+            if (!diskRoot.getChildren().contains(userGroupRoot)) diskRoot.getChildren().add(userGroupRoot);
+            userGroupRoot.getChildren().add(f);
+        };
+    }
+
+    private void refreshFromDelete(CpmFileTreeView file, TreeItem<? extends CpmItemTreeView> parentTreeItem) throws IOException {
+        parentTreeItem.getChildren().clear();
+        file.parent().disk().refresh();
+        refreshDisk(parentTreeItem);
+    }
+
+    private void copyFilesToCpm(DiskItem diskView, List<File> files, String name) {
+        CopyFileController controller = getCopyFileController(files, name);
+
+        var filename = controller.getFilename();
+        var userNum = controller.getUserNumber();
+
+        // TODO: Support copying one file for now
+        copyFile(diskView, files.get(0), filename, userNum);
+    }
+
+    private CopyFileController getCopyFileController(List<File> files, String name) {
+        FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("copy-file-view.fxml"));
+        Stage stage = loadCopyFileView(name, fxmlLoader);
+
+        var controller = (CopyFileController) fxmlLoader.getController();
+        // TODO: Support copying one file for now
+        controller.setNormalizedFilename(files.get(0).getName());
+        controller.setCopyButtonText(name);
+        stage.showAndWait();
+        return controller;
+    }
+
+    private Stage loadCopyFileView(String title, FXMLLoader fxmlLoader) {
+        Stage stage = new Stage();
+        stage.setTitle(title + " file");
+        stage.initOwner(rootPane.getScene().getWindow());
+        stage.initModality(Modality.APPLICATION_MODAL);
+        try {
+            WindowUtil.positionDialog(rootPane.getScene().getWindow(), stage, 310, 143);
+            stage.setScene(new Scene(fxmlLoader.load(), 310, 143));
+        } catch (IOException e) {
+            e.printStackTrace();;
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
+            return null;
+        }
+        return stage;
     }
 
 }
