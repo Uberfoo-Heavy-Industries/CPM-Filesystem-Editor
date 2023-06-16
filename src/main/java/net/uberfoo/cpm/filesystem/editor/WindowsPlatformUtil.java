@@ -44,11 +44,11 @@ public final class WindowsPlatformUtil {
     public static WinNT.HANDLE openDisk(String name) throws IOException {
         WinNT.HANDLE fileHandle = kernel32.CreateFile(
                 name,
-                268435456,
+                WinNT.GENERIC_READ | WinNT.GENERIC_WRITE,
                 0,
                 null,
-                3,
-                0x02000000,
+                WinNT.OPEN_EXISTING,
+                WinNT.FILE_FLAG_BACKUP_SEMANTICS,
                 null);
 
         if (fileHandle == WinBase.INVALID_HANDLE_VALUE) throw new IOException(getError());

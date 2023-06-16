@@ -21,6 +21,8 @@ module net.uberfoo.cpm.filesystem.editor {
     requires aerofx;
     requires org.jfxtras.styles.jmetro;
 
+    requires org.apache.commons.io;
+
     exports net.uberfoo.cpm.filesystem.editor;
     opens net.uberfoo.cpm.filesystem.editor to javafx.fxml,javafx.base;
 }

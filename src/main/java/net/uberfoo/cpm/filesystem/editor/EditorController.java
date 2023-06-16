@@ -13,7 +13,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import net.uberfoo.cpm.filesystem.CpmDisk;
-import net.uberfoo.cpm.filesystem.DiskParameterBlock;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
 
 import java.io.Closeable;
@@ -28,43 +27,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Random;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.prefs.Preferences;
 
-import static net.uberfoo.cpm.filesystem.DiskParameterBlock.createSkewTab;
-
 public class EditorController {
-
-    public static final DiskParameterBlock Z80RB_DPB = new DiskParameterBlock(
-            512,
-            128,
-            5,
-            31,
-            1,
-            2047,
-            511,
-            240,
-            0,
-            0,
-            0,
-            new int[0]
-    );
-
-    public static final DiskParameterBlock OSBORNE_1_DPB = new DiskParameterBlock(
-            256,
-            20,
-            4,
-            15,
-            1,
-            45,
-            63,
-            0x80,
-            0x00,
-            0,
-            3,
-            createSkewTab(2, 10)
-    );
 
     private final Preferences preferences = Preferences.userNodeForPackage(EditorController.class);
 
@@ -161,8 +128,8 @@ public class EditorController {
     @FXML
     protected void onFileMenuOpenClick() {
         var selectDpbDialog = new SelectDpbDialog(rootPane.getScene().getWindow(),
-                List.of(new DiskParameterBlockView("Z80 Retro Badge", Z80RB_DPB),
-                        new DiskParameterBlockView("Osborne 1", OSBORNE_1_DPB)));
+                List.of(new DiskParameterBlockView("Z80 Retro Badge", PartitionTables.Z80RB_DPB),
+                        new DiskParameterBlockView("Osborne 1", PartitionTables.OSBORNE_1_DPB)));
         WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectDpbDialog, selectDpbDialog.getWidth(), selectDpbDialog.getHeight());
         var result = selectDpbDialog.showAndWait();
         if (result.isEmpty()) {
@@ -177,8 +144,7 @@ public class EditorController {
         File file = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
         if (file != null) preferences.put("LAST_PATH", file.getParentFile().getPath());
 
-        try {
-            var channel = new RandomAccessFile(file, "rw").getChannel();
+        try (var channel = new RandomAccessFile(file, "rw").getChannel()) {
             var disk = new CpmDisk(result.get().toDiskParameterBlock(), channel);
             var diskRoot = new TreeItem<>(new CpmDiskTreeView(disk, file.getName(), channel));
 
@@ -192,25 +158,36 @@ public class EditorController {
 
     @FXML
     protected void onFileMenuOpenPartDiskClick() {
+        Optional<DiskPartitionsView> result = getDiskPartitionsView();
+        if (result.isEmpty()) {
+            return;
+        }
+
         var fileChooser = new FileChooser();
         fileChooser.setTitle("Open Partitioned Disk");
         fileChooser.initialDirectoryProperty()
                 .setValue(Path.of(preferences.get("LAST_PART_DISK_PATH", System.getProperty("user.home"))).toFile());
         File file = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
         if (file != null) preferences.put("LAST_PART_DISK_PATH", file.getParentFile().getPath());
-        try {
-            var channel = new RandomAccessFile(file, "rw").getChannel();
-            var disk = new PartitionedDisk(channel.map(FileChannel.MapMode.READ_WRITE, 0, channel.size()));
+        try (var channel = new RandomAccessFile(file, "rw").getChannel()) {
+            var disk = new PartitionedDisk(channel.map(FileChannel.MapMode.READ_WRITE, 0, channel.size()), result.get().getPartitionTable());
             openPartitionDisk(disk, file.getName(), channel);
-        } catch (IOException e) {
-            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
         }
     }
 
+    private Optional<DiskPartitionsView> getDiskPartitionsView() {
+        var selectPartitionsDialog = new SelectPartTableDialog(rootPane.getScene().getWindow(),
+                List.of(new DiskPartitionsView("Z80 Retro Board", PartitionTables.Z80RB_TABLE)));
+
+        WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectPartitionsDialog, selectPartitionsDialog.getWidth(), selectPartitionsDialog.getHeight());
+        var result = selectPartitionsDialog.showAndWait();
+        return result;
+    }
+
     private void openPartitionDisk(PartitionedDisk disk, String name, Closeable channel) {
-        var diskRoot = new TreeItem<>(new PartitionedDiskView(name, disk, channel));
+        var diskRoot = new TreeItem<CpmItemTreeView>(new PartitionedDiskView(name, disk, channel));
         refreshPartitionedDisk(diskRoot);
         root.getChildren().add((TreeItem)diskRoot);
     }
@@ -293,7 +270,12 @@ public class EditorController {
     @FXML
     protected void onFileMenuOpenDiskClick() {
         try {
-            var list = PlatformDiskUtils.Windows.getDiskList();
+            Optional<DiskPartitionsView> tableResult = getDiskPartitionsView();
+            if (tableResult.isEmpty()) {
+                return;
+            }
+
+            var list = PlatformDiskFactory.getInstance().getDiskList();
             var selectDiskDialog = new SelectDiskDialog(rootPane.getScene().getWindow(), list);
             WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectDiskDialog, selectDiskDialog.getWidth(), selectDiskDialog.getHeight());
             var result = selectDiskDialog.showAndWait();
@@ -310,7 +292,7 @@ public class EditorController {
 
             var disk = PlatformDiskFactory.getInstance().getDisk(selection);
 
-            Task task = new Task<Void>() {
+            Task<Void> task = new Task<>() {
                 @Override
                 protected Void call() throws Exception {
                     try (var reader = disk.openReader()) {
@@ -324,13 +306,13 @@ public class EditorController {
                                 return null;
                             }
                         }
-                        PartitionedDisk partitionedDisk = new PartitionedDisk(bb.rewind());
+                        PartitionedDisk partitionedDisk = new PartitionedDisk(bb.rewind(), tableResult.orElseThrow().getPartitionTable());
                         openPartitionDisk(partitionedDisk, addr, () -> {});
                     } catch (Exception e) {
                         e.printStackTrace();
                         AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
                     } finally {
-                        Platform.runLater(() -> progressDialog.close());
+                        Platform.runLater(progressDialog::close);
                     }
                     return null;
                 }
@@ -360,17 +342,17 @@ public class EditorController {
         }
         ((DiskItem) diskRoot.getValue()).disk().getFilesStream()
                 .map(f -> new CpmFileTreeView(f, (DiskItem) diskRoot.getValue()))
-                .map(f -> new TreeItem<>(f))
+                .map(TreeItem::new)
                 .forEach(addTreeChild(diskRoot));
         diskRoot.expandedProperty().set(expanded);
     }
 
-    private void refreshPartitionedDisk(TreeItem<?> diskRoot) {
+    private void refreshPartitionedDisk(TreeItem<CpmItemTreeView> diskRoot) {
         var expanded = diskRoot.isExpanded();
         diskRoot.getChildren().clear();
         ((PartitionedDiskView) diskRoot.getValue()).partitionedDisk().getDisks().stream()
                 .map(d -> new PartitionTreeView(d.disk(), d.label()))
-                .map(d -> new TreeItem(d))
+                .map(TreeItem<CpmItemTreeView>::new)
                 .forEach(t -> {
                     refreshDisk(t);
                     diskRoot.getChildren().add(t);
@@ -379,8 +361,7 @@ public class EditorController {
     }
 
     private void copyFile(AcceptsImports disk, File file, String filename, int userNum) {
-        try {
-            var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
+        try (var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ)) {
             disk.importFile(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()), filename, userNum);
         } catch (FileAlreadyExistsException e) {
             e.printStackTrace();
@@ -428,7 +409,9 @@ public class EditorController {
         // TODO: Support copying one file for now
         controller.setNormalizedFilename(files.get(0).getName());
         controller.setCopyButtonText(name);
-        stage.showAndWait();
+        if (stage != null) {
+            stage.showAndWait();
+        }
         return controller;
     }
 

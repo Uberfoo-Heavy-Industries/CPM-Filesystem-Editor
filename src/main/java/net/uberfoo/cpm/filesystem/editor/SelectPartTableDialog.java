@@ -13,20 +13,20 @@ import javafx.stage.Window;
 import java.io.IOException;
 import java.util.List;
 
-public class SelectDiskDialog extends Dialog<PlatformDiskFactory.OSDiskEntry> {
+public class SelectPartTableDialog extends Dialog<DiskPartitionsView> {
 
     @FXML
-    private ChoiceBox<PlatformDiskFactory.OSDiskEntry> selectBox;
+    private ChoiceBox<DiskPartitionsView> selectBox;
 
-    public SelectDiskDialog(Window owner, List<PlatformDiskFactory.OSDiskEntry> items) {
+    public SelectPartTableDialog(Window owner, List<DiskPartitionsView> items) {
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("select-disk-view.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("select-part-table-view.fxml"));
             fxmlLoader.setController(this);
 
             DialogPane dialogPane = fxmlLoader.load();
 
             selectBox.getItems().addAll(items);
-            if (items.size() > 0) selectBox.setValue(items.get(0));
+            selectBox.setValue(items.get(0));
 
             dialogPane.lookupButton(ButtonType.OK).disableProperty().bind(selectBox.valueProperty().map(x -> x == null));
 
@@ -34,15 +34,11 @@ public class SelectDiskDialog extends Dialog<PlatformDiskFactory.OSDiskEntry> {
             initModality(Modality.APPLICATION_MODAL);
 
             setResizable(false);
-            setTitle("Select Disk");
+            setTitle("Select Partition Table");
             setDialogPane(dialogPane);
             setResultConverter(buttonType -> buttonType == ButtonType.OK ? selectBox.getValue() : null);
 
-            WindowUtil.positionDialog(owner, this, dialogPane.getWidth(), dialogPane.getHeight());
-
-            setOnShowing(dialogEvent -> Platform.runLater(() -> {
-                selectBox.requestFocus();
-            }));
+            setOnShowing(dialogEvent -> Platform.runLater(() -> selectBox.requestFocus()));
         } catch (IOException e) {
             AlertDialogs.unexpectedAlert(owner, e);
         }

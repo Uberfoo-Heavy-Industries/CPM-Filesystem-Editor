@@ -1,9 +1,11 @@
 package net.uberfoo.cpm.filesystem.editor;
 
 import com.sun.jna.Memory;
+import com.sun.jna.Structure;
 import com.sun.jna.platform.win32.COM.WbemcliUtil;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.Ole32;
+import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.IntByReference;
 
@@ -24,6 +26,32 @@ public class WindowsPlatformDiskFactory extends PlatformDiskFactory {
         CAPABILITYDESCRIPTIONS
     }
 
+    @Structure.FieldOrder({"cylinders", "mediaType", "tracksPerCylinder", "sectorsPerTrack", "bytesPerSector"})
+    public static final class DiskGeometry extends Structure {
+
+        public WinNT.LARGE_INTEGER cylinders;
+        public int mediaType;
+        public WinDef.DWORD tracksPerCylinder;
+        public WinDef.DWORD sectorsPerTrack;
+        public WinDef.DWORD bytesPerSector;
+
+    }
+
+    @Structure.FieldOrder({"geometry", "diskSize", "data"})
+    public static final class DiskGeometryEx extends Structure {
+
+        public DiskGeometryEx(int bufferSize) {
+            data = new WinDef.BYTE[bufferSize];
+            allocateMemory();
+        }
+
+        public DiskGeometry geometry;
+        public WinNT.LARGE_INTEGER diskSize;
+        public WinDef.BYTE[] data;
+    }
+
+    private static final int IOCTL_DISK_GET_DRIVE_GEOMETRY_EX = 458912;
+
     private static Kernel32 kernel32 = Kernel32.INSTANCE;
 
     static {
@@ -41,10 +69,18 @@ public class WindowsPlatformDiskFactory extends PlatformDiskFactory {
             if (q.getValue(SIZE, i) == null) {
                 continue;
             }
-            var name = q.getValue(NAME, i).toString();
-            long size = getSize(name);
+            var addr = q.getValue(NAME, i).toString();
+            var geometry = getGeometry(addr);
+            long size = geometry.diskSize.getValue();
             if (size > 0) {
-                list.add(new OSDiskEntry(q.getValue(MODEL, i).toString(), q.getValue(NAME, i).toString(), size));
+                list.add(
+                        new OSDiskEntry(
+                                q.getValue(MODEL, i).toString(),
+                                addr,
+                                size,
+                                geometry.geometry.bytesPerSector.intValue(),
+                                geometry.geometry.mediaType == 11
+                        ));
             }
         }
         return list;
@@ -55,8 +91,14 @@ public class WindowsPlatformDiskFactory extends PlatformDiskFactory {
         return new WindowsPlatformDisk(disk);
     }
 
-    private static long getSize(String physicalDrive) throws Exception {
-        WinNT.HANDLE f = kernel32.CreateFile(physicalDrive, -2147483648, 3, null, 3, 128, null);
+    private static DiskGeometryEx getGeometry(String physicalDrive) throws Exception {
+        WinNT.HANDLE f = kernel32.CreateFile(physicalDrive,
+                WinNT.GENERIC_READ,
+                WinNT.FILE_SHARE_READ | WinNT.FILE_SHARE_WRITE,
+                null,
+                WinNT.OPEN_EXISTING,
+                0,
+                null);
         var error = kernel32.GetLastError();
         switch (error) {
             case 0:
@@ -70,14 +112,25 @@ public class WindowsPlatformDiskFactory extends PlatformDiskFactory {
             default:
                 throw new Exception("Unexpected error opening path " + physicalDrive + ". Code = " + error);
         }
-        try (var mem = new Memory(8)) {
+        try {
+            var geometry = new DiskGeometryEx(128);
             IntByReference bytesReturned = new IntByReference();
-            var pass = kernel32.DeviceIoControl(f, 475228, null, 0, mem, 8, bytesReturned, null);
-            error = kernel32.GetLastError();
-            if (!pass || error != 0) {
-                throw new Exception("Unexpected error for path " + physicalDrive + ". Code = " + error);
+
+            var pass = kernel32.DeviceIoControl(f,
+                    IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
+                    null, 0,
+                    geometry.getPointer(), geometry.size(),
+                    bytesReturned,
+                    null);
+
+            if (!pass) {
+                throw new Exception("Unexpected error for path " + physicalDrive + ". " + WindowsPlatformUtil.getError());
             }
-            return mem.getLong(0);
+
+            // Must re-read the memory into the struct
+            geometry.read();
+
+            return geometry;
         } finally {
             kernel32.CloseHandle(f);
         }
