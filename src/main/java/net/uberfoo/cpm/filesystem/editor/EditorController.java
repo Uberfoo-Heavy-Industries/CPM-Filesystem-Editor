@@ -58,6 +58,9 @@ public class EditorController {
     @FXML
     private MenuItem treeContextMenuImportItem;
 
+    @FXML
+    private MenuItem exportPartDiskMenuItem;
+
     private TreeItem<? extends CpmItemTreeView> root;
 
     @FXML
@@ -86,6 +89,11 @@ public class EditorController {
         treeContextMenuImportItem.visibleProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
                         .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof AcceptsImports))
+                        .orElse(true));
+
+        exportPartDiskMenuItem.disableProperty()
+                .bind(fileTree.getFocusModel().focusedItemProperty()
+                .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof PartitionTreeView))
                         .orElse(true));
 
         fileTree.setRowFactory(view -> {
@@ -324,6 +332,31 @@ public class EditorController {
 
             new Thread(task).start();
 
+        } catch (Exception e) {
+            e.printStackTrace();
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
+        }
+    }
+
+    @FXML
+    protected void onFileMenuExportPartDiskClick() {
+        try {
+            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof PartitionedDiskView item) {
+                var fileChooser = new FileChooser();
+                fileChooser.setTitle("Export File");
+                fileChooser.initialDirectoryProperty()
+                        .setValue(Path.of(preferences.get("LAST_EXPORT_PATH", System.getProperty("user.home"))).toFile());
+                File file = fileChooser.showSaveDialog(rootPane.getScene().getWindow());
+
+                if (file != null) preferences.put("LAST_EXPORT_PATH", file.getParentFile().getPath());
+                else return;
+
+                if (file.exists()) {
+                    Files.delete(file.toPath());
+                }
+
+                Files.write(Files.createFile(file.toPath()), item.partitionedDisk().createDisk().array(), StandardOpenOption.APPEND);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
