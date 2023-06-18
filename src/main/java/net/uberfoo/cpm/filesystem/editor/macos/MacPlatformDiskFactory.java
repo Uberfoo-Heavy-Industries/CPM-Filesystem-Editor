@@ -48,16 +48,9 @@ public class MacPlatformDiskFactory extends PlatformDiskFactory {
                 var removable = new CFBooleanRef(dict.getValue(REMOVABLE_KEY));
                 var blkSize = new CoreFoundation.CFNumberRef(dict.getValue(BLK_SIZE_KEY));
                 var diskSize = new CoreFoundation.CFNumberRef(dict.getValue(DISK_SIZE_KEY));
-                var diskName = new CoreFoundation.CFNumberRef(dict.getValue(DISK_NAME_KEY));
+                var diskName = new CoreFoundation.CFStringRef(dict.getValue(DISK_NAME_KEY));
 
-                int fd = C.open(p.toString(), 0);
-                LongByReference blkCount = new LongByReference();
-                C.ioctl(fd, DKIOCGETBLOCKCOUNT, blkCount);
-                C.close(fd);
-
-                System.out.println("BLOCK COUNT: " + blkCount.getValue() + " == " + diskSize.longValue() / blkSize.longValue());
-
-                var entry = new OSDiskEntry(diskName.toString(),
+                var entry = new OSDiskEntry(diskName.stringValue(),
                         p.toString(),
                         diskSize.longValue(),
                         blkSize.intValue(),
