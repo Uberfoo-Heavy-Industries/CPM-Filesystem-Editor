@@ -28,6 +28,6 @@ public class MacPlatformDisk implements PlatformDisk {
 
     @Override
     public PlatformDiskWriter openWriter() throws IOException {
-        return null;
+        return new MacPlatformDiskWriter(Path.of(diskEntry.address()));
     }
 }
