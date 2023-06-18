@@ -48,7 +48,7 @@ public final class WindowsPlatformUtil {
                 0,
                 null,
                 WinNT.OPEN_EXISTING,
-                WinNT.FILE_FLAG_BACKUP_SEMANTICS,
+                WinNT.FILE_FLAG_NO_BUFFERING | WinNT.FILE_FLAG_SEQUENTIAL_SCAN,
                 null);
 
         if (fileHandle == WinBase.INVALID_HANDLE_VALUE) throw new IOException(getError());
