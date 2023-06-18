@@ -24,7 +24,7 @@ public class WindowsPlatformDiskWriter implements PlatformDiskWriter {
         var bytesWritten = new IntByReference();
         var success = kernel32.WriteFile(fileHandle,
                 bytes,
-                4096,
+                bytes.length,
                 bytesWritten,
                 null);
 

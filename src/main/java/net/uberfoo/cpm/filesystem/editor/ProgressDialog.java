@@ -21,7 +21,7 @@ public class ProgressDialog extends Dialog<Void> {
     @FXML
     private Label label;
 
-    public ProgressDialog(Window owner, long size) {
+    public ProgressDialog(Window owner, long size, String title) {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("progress-view.fxml"));
             fxmlLoader.setController(this);
@@ -34,7 +34,7 @@ public class ProgressDialog extends Dialog<Void> {
             initModality(Modality.APPLICATION_MODAL);
 
             setResizable(false);
-            setTitle("Loading");
+            setTitle(title);
             setDialogPane(dialogPane);
 
             label.textProperty()

@@ -14,6 +14,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
 import java.io.File;
@@ -61,6 +62,9 @@ public class EditorController {
     @FXML
     private MenuItem exportPartDiskMenuItem;
 
+    @FXML
+    private MenuItem flashDiskMenuItem;
+
     private TreeItem<? extends CpmItemTreeView> root;
 
     @FXML
@@ -93,7 +97,12 @@ public class EditorController {
 
         exportPartDiskMenuItem.disableProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
-                .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof PartitionTreeView))
+                        .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof PartitionTreeView))
+                        .orElse(true));
+
+        flashDiskMenuItem.disableProperty()
+                .bind(fileTree.getFocusModel().focusedItemProperty()
+                        .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof PartitionTreeView))
                         .orElse(true));
 
         fileTree.setRowFactory(view -> {
@@ -283,18 +292,13 @@ public class EditorController {
                 return;
             }
 
-            var list = PlatformDiskFactory.getInstance().getDiskList();
-            var selectDiskDialog = new SelectDiskDialog(rootPane.getScene().getWindow(), list);
-            WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectDiskDialog, selectDiskDialog.getWidth(), selectDiskDialog.getHeight());
-            var result = selectDiskDialog.showAndWait();
-            System.out.println(result);
-
-            var selection = result.orElseThrow(() -> new Exception("Invalid Selection"));
+            PlatformDiskFactory.OSDiskEntry selection = getOsDiskEntry();
+            if (selection == null) return;
             var addr = selection.address();
 
             ByteBuffer bb = ByteBuffer.allocate((int)selection.size());
 
-            var progressDialog = new ProgressDialog(rootPane.getScene().getWindow(), selection.size());
+            var progressDialog = new ProgressDialog(rootPane.getScene().getWindow(), selection.size(), "Loading disk...");
             WindowUtil.positionDialog(rootPane.getScene().getWindow(), progressDialog, progressDialog.getWidth(), progressDialog.getHeight());
             progressDialog.show();
 
@@ -302,14 +306,16 @@ public class EditorController {
 
             Task<Void> task = new Task<>() {
                 @Override
-                protected Void call() throws Exception {
+                protected Void call() {
                     try (var reader = disk.openReader()) {
                         long sum = 0;
-                        while (sum < selection.size()) {
-                            var block = reader.read();
+                        var size = tableResult.get().getPartitionTable().diskSize();
+                        var block = new byte[(int)Math.divideExact(size, 16)];
+                        while (sum < size) {
+                            reader.read(block);
                             sum += block.length;
                             bb.put(block);
-                            updateProgress(sum, selection.size());
+                            updateProgress(sum, size);
                             if (isCancelled()) {
                                 return null;
                             }
@@ -361,6 +367,69 @@ public class EditorController {
             e.printStackTrace();
             AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
         }
+    }
+
+    @FXML
+    protected void onFileMenuFlashDiskClick() {
+        try {
+            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof PartitionedDiskView item) {
+                PlatformDiskFactory.OSDiskEntry selection = getOsDiskEntry();
+
+                if (selection == null) return;
+
+                var progressDialog = new ProgressDialog(rootPane.getScene().getWindow(), selection.size(), "Flashing disk...");
+                WindowUtil.positionDialog(rootPane.getScene().getWindow(), progressDialog, progressDialog.getWidth(), progressDialog.getHeight());
+
+                var disk = PlatformDiskFactory.getInstance().getDisk(selection);
+                progressDialog.show();
+                Task<Void> task = new Task<>() {
+                    @Override
+                    protected Void call() {
+                        long size = item.partitionedDisk().getDiskSize();
+                        updateProgress(0, size);
+                        try (var writer = disk.openWriter()) {
+                            long sum = 0; //
+                            var block = new byte[(int)Math.divideExact(size, 16)];
+                            var buff = item.partitionedDisk().createDisk();
+                            while (sum < size) {
+                                buff.get(block);
+                                writer.write(block);
+                                sum += block.length;
+                                updateProgress(sum, size);
+                                if (isCancelled()) {
+                                    return null;
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
+                        } finally {
+                            Platform.runLater(progressDialog::close);
+                        }
+                        return null;
+                    }
+
+                };
+                progressDialog.progressProperty().bind(task.progressProperty());
+                progressDialog.setOnCloseRequest((x) -> task.cancel());
+                new Thread(task).start();
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
+        }
+    }
+
+    @Nullable
+    private PlatformDiskFactory.OSDiskEntry getOsDiskEntry() throws Exception {
+        var list = PlatformDiskFactory.getInstance().getDiskList();
+        var selectDiskDialog = new SelectDiskDialog(rootPane.getScene().getWindow(), list);
+        WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectDiskDialog, selectDiskDialog.getWidth(), selectDiskDialog.getHeight());
+        var result = selectDiskDialog.showAndWait();
+
+        return result.orElse(null);
     }
 
     private void refreshDisk(TreeItem<?> diskRoot) {

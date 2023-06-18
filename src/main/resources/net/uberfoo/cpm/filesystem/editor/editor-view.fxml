@@ -11,9 +11,11 @@
                     <items>
                         <MenuItem fx:id="openMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenClick" text="Open..." />
                         <MenuItem fx:id="openPartDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenPartDiskClick" text="Open Partitioned Disk Image..." />
-                        <MenuItem fx:id="openDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenDiskClick" text="Open Disk..." />
                         <MenuItem fx:id="exportPartDiskMenuItem" disable="true" mnemonicParsing="false" onAction="#onFileMenuExportPartDiskClick" text="Export Partitioned Disk..." />
                         <MenuItem fx:id="closeMenuItem" disable="true" mnemonicParsing="false" onAction="#onFileMenuCloseClick" text="Close" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem fx:id="openDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenDiskClick" text="Open Disk..." />
+                        <MenuItem fx:id="flashDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuFlashDiskClick" text="Flash to Disk..." />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#onFileMenuExitClick" text="Exit" />
                     </items>

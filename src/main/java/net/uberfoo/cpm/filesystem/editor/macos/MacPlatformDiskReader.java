@@ -20,8 +20,8 @@ public class MacPlatformDiskReader implements PlatformDiskReader {
     }
 
     @Override
-    public byte[] read() throws IOException {
-        return inputStream.readNBytes(2048);
+    public void read(byte[] block) throws IOException {
+        inputStream.read(block);
     }
 
     @Override

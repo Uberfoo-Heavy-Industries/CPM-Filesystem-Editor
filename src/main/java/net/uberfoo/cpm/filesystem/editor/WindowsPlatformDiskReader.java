@@ -20,18 +20,15 @@ public class WindowsPlatformDiskReader implements PlatformDiskReader {
     }
 
     @Override
-    public byte[] read() throws IOException {
-        var arr = new byte[4096];
+    public void read(byte[] block) throws IOException {
         var bytesRead = new IntByReference();
         var success = kernel32.ReadFile(fileHandle,
-                arr,
-                4096,
+                block,
+                block.length,
                 bytesRead,
                 null);
 
         if (!success) throw new IOException(getError());
-
-        return arr;
     }
 
     @Override

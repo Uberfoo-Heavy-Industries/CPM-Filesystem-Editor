@@ -1,14 +1,11 @@
 package net.uberfoo.cpm.filesystem.editor.macos;
 
 import com.sun.jna.platform.mac.CoreFoundation;
-import com.sun.jna.platform.mac.CoreFoundation.CFStringRef;
 import com.sun.jna.platform.mac.CoreFoundation.CFBooleanRef;
+import com.sun.jna.platform.mac.CoreFoundation.CFStringRef;
 import com.sun.jna.platform.mac.DiskArbitration;
-import com.sun.jna.ptr.LongByReference;
 import net.uberfoo.cpm.filesystem.editor.PlatformDisk;
 import net.uberfoo.cpm.filesystem.editor.PlatformDiskFactory;
-import net.uberfoo.cpm.filesystem.editor.ioctl.IOCtlLib;
-import org.slf4j.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,10 +14,6 @@ import java.util.List;
 
 public class MacPlatformDiskFactory extends PlatformDiskFactory {
 
-    private static final long DKIOCGETBLOCKCOUNT = 0x40086419;
-
-
-    private static final IOCtlLib C = IOCtlLib.INSTANCE;
     private static final DiskArbitration DA = DiskArbitration.INSTANCE;
     private static final CoreFoundation CF = CoreFoundation.INSTANCE;
     private static final CFStringRef REMOVABLE_KEY = CFStringRef.createCFString("DAMediaRemovable");
@@ -43,7 +36,7 @@ public class MacPlatformDiskFactory extends PlatformDiskFactory {
                 var dict = DA.DADiskCopyDescription(diskRef);
 
                 var desc = CF.CFCopyDescription(dict);
-                System.out.println(desc);
+                System.out.println(desc.stringValue());
 
                 var removable = new CFBooleanRef(dict.getValue(REMOVABLE_KEY));
                 var blkSize = new CoreFoundation.CFNumberRef(dict.getValue(BLK_SIZE_KEY));
