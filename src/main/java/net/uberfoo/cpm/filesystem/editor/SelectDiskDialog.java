@@ -9,9 +9,11 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.stage.Modality;
 import javafx.stage.Window;
+import javafx.util.StringConverter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 public class SelectDiskDialog extends Dialog<PlatformDiskFactory.OSDiskEntry> {
 
@@ -25,10 +27,24 @@ public class SelectDiskDialog extends Dialog<PlatformDiskFactory.OSDiskEntry> {
 
             DialogPane dialogPane = fxmlLoader.load();
 
+            selectBox.setConverter(new StringConverter<PlatformDiskFactory.OSDiskEntry>() {
+                @Override
+                public String toString(PlatformDiskFactory.OSDiskEntry entry) {
+                    var size = String.format("%.2f", entry.size() / (1024f * 1024f));
+                    return entry.name() + " (" +entry.address() + ") " + size + "Mb";
+                }
+
+                @Override
+                public PlatformDiskFactory.OSDiskEntry fromString(String string) {
+                    return null;
+                }
+            });
+
             selectBox.getItems().addAll(items);
             if (items.size() > 0) selectBox.setValue(items.get(0));
 
-            dialogPane.lookupButton(ButtonType.OK).disableProperty().bind(selectBox.valueProperty().map(x -> x == null));
+            dialogPane.lookupButton(ButtonType.OK).disableProperty()
+                    .bind(selectBox.valueProperty().map(Objects::isNull));
 
             initOwner(owner);
             initModality(Modality.APPLICATION_MODAL);

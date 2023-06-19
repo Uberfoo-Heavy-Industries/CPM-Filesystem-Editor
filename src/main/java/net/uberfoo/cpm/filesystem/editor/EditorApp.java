@@ -7,8 +7,8 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import jfxtras.styles.jmetro.JMetro;
 import jfxtras.styles.jmetro.Style;
-import org.aerofx.AeroFX;
 
+import java.util.Objects;
 import java.util.prefs.Preferences;
 
 public class EditorApp extends Application {
@@ -31,7 +31,9 @@ public class EditorApp extends Application {
         stage.setX(preferences.getDouble("WINDOW_X", 600));
         stage.setY(preferences.getDouble("WINDOW_Y", 600));
 
-        stage.getIcons().add(new Image(ClassLoader.getSystemClassLoader().getResourceAsStream("disc-drive-orange.png")));
+        stage.getIcons().add(new Image(Objects.requireNonNull(
+                ClassLoader.getSystemClassLoader().getResourceAsStream("disc-drive-orange.png"))));
+
         stage.setTitle("CP/M Filesystem Editor");
         stage.setScene(scene);
         stage.show();

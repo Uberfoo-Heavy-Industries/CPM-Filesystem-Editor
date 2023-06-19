@@ -1,16 +1,9 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.LongProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.StringProperty;
 
-public class CpmUserGroupView implements CpmItemTreeView {
-
-    private final int userNumber;
-
-    public CpmUserGroupView(int userNumber) {
-        this.userNumber = userNumber;
-    }
+public record CpmUserGroupView(int userNumber) implements CpmItemTreeView {
 
     @Override
     public StringProperty nameProperty() {
@@ -18,11 +11,7 @@ public class CpmUserGroupView implements CpmItemTreeView {
     }
 
     @Override
-    public LongProperty sizeProperty() {
+    public StringProperty sizeProperty() {
         return null;
-    }
-
-    public int getUserNumber() {
-        return userNumber;
     }
 }

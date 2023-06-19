@@ -1,4 +1,4 @@
-package net.uberfoo.cpm.filesystem.editor;
+package net.uberfoo.cpm.filesystem.editor.windows;
 
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinBase;

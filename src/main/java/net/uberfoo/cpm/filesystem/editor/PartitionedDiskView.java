@@ -1,14 +1,13 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.LongProperty;
-import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.StringProperty;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
+
+import static net.uberfoo.cpm.filesystem.editor.Util.toMegabytes;
 
 public record PartitionedDiskView(String name, PartitionedDisk partitionedDisk, Closeable channel) implements CpmItemTreeView, ClosableItem {
 
@@ -18,8 +17,8 @@ public record PartitionedDiskView(String name, PartitionedDisk partitionedDisk, 
     }
 
     @Override
-    public LongProperty sizeProperty() {
-        return new ReadOnlyLongWrapper(this, "size", partitionedDisk.getDiskSize());
+    public StringProperty sizeProperty() {
+        return new ReadOnlyStringWrapper(this, "size", toMegabytes(partitionedDisk.getDiskSize()));
     }
 
     @Override

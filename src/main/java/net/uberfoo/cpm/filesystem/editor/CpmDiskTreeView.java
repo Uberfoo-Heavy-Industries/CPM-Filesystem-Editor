@@ -1,13 +1,15 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.*;
+import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.StringProperty;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
 import java.util.BitSet;
+
+import static net.uberfoo.cpm.filesystem.editor.Util.toMegabytes;
 
 public record CpmDiskTreeView(CpmDisk disk, String name,
                               FileChannel channel) implements CpmItemTreeView, ClosableItem, AcceptsImports, DiskItem {
@@ -18,8 +20,8 @@ public record CpmDiskTreeView(CpmDisk disk, String name,
     }
 
     @Override
-    public LongProperty sizeProperty() {
-        return new ReadOnlyLongWrapper(this, "size", disk.getDpb().getFilesystemSize());
+    public StringProperty sizeProperty() {
+        return new ReadOnlyStringWrapper(this, "size", toMegabytes(disk.getDpb().getFilesystemSize()));
     }
 
     @Override

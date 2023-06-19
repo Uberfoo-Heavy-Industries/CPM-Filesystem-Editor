@@ -1,17 +1,18 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.application.Platform;
 import javafx.beans.property.Property;
-import javafx.concurrent.Task;
-import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.*;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.io.IOException;
-import java.util.List;
+
+import static net.uberfoo.cpm.filesystem.editor.Util.toMegabytes;
 
 public class ProgressDialog extends Dialog<Void> {
 
@@ -40,8 +41,7 @@ public class ProgressDialog extends Dialog<Void> {
             label.textProperty()
                     .bind(progress.progressProperty().map(
                             (x) -> (int)Math.floor(x.doubleValue() * 100)
-                                    + "% (" + (int)Math.floor(x.doubleValue() * size)
-                                    + " bytes)"));
+                                    + "% (" + toMegabytes((int)Math.floor(x.doubleValue() * size)) + ")"));
 
         } catch (IOException e) {
             AlertDialogs.unexpectedAlert(owner, e);

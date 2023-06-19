@@ -14,7 +14,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
 import java.io.File;
@@ -310,6 +309,7 @@ public class EditorController {
                     try (var reader = disk.openReader()) {
                         long sum = 0;
                         var size = tableResult.get().getPartitionTable().diskSize();
+                        updateProgress(sum, size);
                         var block = new byte[(int)Math.divideExact(size, 16)];
                         while (sum < size) {
                             reader.read(block);
@@ -422,9 +422,11 @@ public class EditorController {
         }
     }
 
-    @Nullable
     private PlatformDiskFactory.OSDiskEntry getOsDiskEntry() throws Exception {
-        var list = PlatformDiskFactory.getInstance().getDiskList();
+        var list = PlatformDiskFactory.getInstance().getDiskList().stream()
+                .filter(PlatformDiskFactory.OSDiskEntry::removable)
+                .filter(disk -> disk.size() < 4L * 1024 * 1024 * 1024)
+                .toList();
         var selectDiskDialog = new SelectDiskDialog(rootPane.getScene().getWindow(), list);
         WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectDiskDialog, selectDiskDialog.getWidth(), selectDiskDialog.getHeight());
         var result = selectDiskDialog.showAndWait();
@@ -479,7 +481,7 @@ public class EditorController {
             var fileView = f.getValue();
             var stat = fileView.file().getStat();
             var userGroupRoot = (diskRoot.getChildren()).stream()
-                    .filter(x -> ((CpmUserGroupView) x.getValue()).getUserNumber() == stat)
+                    .filter(x -> ((CpmUserGroupView) x.getValue()).userNumber() == stat)
                     .findFirst()
                     .orElse(new TreeItem(new CpmUserGroupView(stat)));
             if (!diskRoot.getChildren().contains(userGroupRoot)) diskRoot.getChildren().add(userGroupRoot);

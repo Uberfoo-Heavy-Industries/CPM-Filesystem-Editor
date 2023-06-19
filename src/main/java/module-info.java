@@ -25,4 +25,6 @@ module net.uberfoo.cpm.filesystem.editor {
 
     exports net.uberfoo.cpm.filesystem.editor;
     opens net.uberfoo.cpm.filesystem.editor to javafx.fxml,javafx.base;
+    exports net.uberfoo.cpm.filesystem.editor.windows;
+    opens net.uberfoo.cpm.filesystem.editor.windows to javafx.base, javafx.fxml;
 }

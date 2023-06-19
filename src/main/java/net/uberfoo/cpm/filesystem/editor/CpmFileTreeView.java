@@ -1,14 +1,12 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.LongProperty;
-import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.StringProperty;
 import net.uberfoo.cpm.filesystem.AllocationTableFile;
-import net.uberfoo.cpm.filesystem.CpmDisk;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import static net.uberfoo.cpm.filesystem.editor.Util.toByteUnit;
 
 public record CpmFileTreeView(AllocationTableFile file, DiskItem parent) implements CpmItemTreeView, DeletableItem, ExportableItem {
 
@@ -16,12 +14,12 @@ public record CpmFileTreeView(AllocationTableFile file, DiskItem parent) impleme
         return new ReadOnlyStringWrapper(this, "name", file.getFilename());
     }
 
-    public LongProperty sizeProperty() {
-        return new ReadOnlyLongWrapper(this, "size", file.size());
+    public StringProperty sizeProperty() {
+        return new ReadOnlyStringWrapper(this, "size", toByteUnit(file.size()));
     }
 
     @Override
-    public void delete() throws IOException {
+    public void delete() {
         file.delete();
     }
 

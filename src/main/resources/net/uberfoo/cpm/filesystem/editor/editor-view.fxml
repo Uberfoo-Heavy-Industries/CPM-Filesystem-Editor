@@ -33,9 +33,9 @@
             <content>
                 <TreeTableView fx:id="fileTree" showRoot="false">
                     <columns>
-                        <TreeTableColumn fx:id="nameColumn" editable="false" prefWidth="147.0" text="Name">
+                        <TreeTableColumn fx:id="nameColumn" editable="false" prefWidth="256.0" text="Name">
                         </TreeTableColumn>
-                        <TreeTableColumn fx:id="sizeColumn" editable="false" prefWidth="99.0" text="Size" />
+                        <TreeTableColumn fx:id="sizeColumn" editable="false" prefWidth="100.0" text="Size" />
                     </columns>
                     <contextMenu>
                         <ContextMenu fx:id="treeContextMenu">

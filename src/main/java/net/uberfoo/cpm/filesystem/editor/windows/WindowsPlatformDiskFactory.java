@@ -1,6 +1,5 @@
-package net.uberfoo.cpm.filesystem.editor;
+package net.uberfoo.cpm.filesystem.editor.windows;
 
-import com.sun.jna.Memory;
 import com.sun.jna.Structure;
 import com.sun.jna.platform.win32.COM.WbemcliUtil;
 import com.sun.jna.platform.win32.Kernel32;
@@ -8,22 +7,22 @@ import com.sun.jna.platform.win32.Ole32;
 import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.IntByReference;
+import net.uberfoo.cpm.filesystem.editor.PlatformDisk;
+import net.uberfoo.cpm.filesystem.editor.PlatformDiskFactory;
 
 import java.io.FileNotFoundException;
 import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.uberfoo.cpm.filesystem.editor.WindowsPlatformDiskFactory.FieldEnum.*;
+import static net.uberfoo.cpm.filesystem.editor.windows.WindowsPlatformDiskFactory.FieldEnum.*;
 
 public class WindowsPlatformDiskFactory extends PlatformDiskFactory {
 
     public enum FieldEnum {
         NAME,
         SIZE,
-        MODEL,
-        CAPABILITIES,
-        CAPABILITYDESCRIPTIONS
+        MODEL
     }
 
     @Structure.FieldOrder({"cylinders", "mediaType", "tracksPerCylinder", "sectorsPerTrack", "bytesPerSector"})
@@ -52,7 +51,7 @@ public class WindowsPlatformDiskFactory extends PlatformDiskFactory {
 
     private static final int IOCTL_DISK_GET_DRIVE_GEOMETRY_EX = 458912;
 
-    private static Kernel32 kernel32 = Kernel32.INSTANCE;
+    private static final Kernel32 kernel32 = Kernel32.INSTANCE;
 
     static {
         Ole32.INSTANCE.CoInitializeEx(null, Ole32.COINIT_MULTITHREADED).intValue();
@@ -62,7 +61,7 @@ public class WindowsPlatformDiskFactory extends PlatformDiskFactory {
 
     @Override
     public List<OSDiskEntry> getDiskList() throws Exception {
-        WbemcliUtil.WmiQuery processQuery = new WbemcliUtil.WmiQuery<FieldEnum>("Win32_DiskDrive", FieldEnum.class);
+        WbemcliUtil.WmiQuery<FieldEnum> processQuery = new WbemcliUtil.WmiQuery<>("Win32_DiskDrive", FieldEnum.class);
         var q = processQuery.execute();
         List<OSDiskEntry> list = new ArrayList<>(q.getResultCount());
         for (int i = 0; i < q.getResultCount(); i++) {

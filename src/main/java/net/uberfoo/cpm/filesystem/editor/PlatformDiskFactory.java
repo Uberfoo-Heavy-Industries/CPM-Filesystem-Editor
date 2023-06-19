@@ -2,6 +2,7 @@ package net.uberfoo.cpm.filesystem.editor;
 
 import com.sun.jna.Platform;
 import net.uberfoo.cpm.filesystem.editor.macos.MacPlatformDiskFactory;
+import net.uberfoo.cpm.filesystem.editor.windows.WindowsPlatformDiskFactory;
 
 import java.util.List;
 
