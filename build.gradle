@@ -52,6 +52,7 @@ dependencies {
 
     implementation(platform('org.apache.logging.log4j:log4j-bom:2.19.0'))
     implementation 'org.apache.logging.log4j:log4j-api'
+    implementation 'commons-io:commons-io:2.13.0'
 
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.1'
     implementation 'com.fasterxml.jackson.core:jackson-core:2.14.1'
@@ -66,7 +67,7 @@ dependencies {
     runtimeOnly 'org.apache.logging.log4j:log4j-slf4j2-impl'
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
 }
 
 test {

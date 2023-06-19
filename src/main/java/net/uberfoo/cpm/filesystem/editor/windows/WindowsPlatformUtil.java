@@ -1,4 +1,4 @@
-package net.uberfoo.cpm.filesystem.editor;
+package net.uberfoo.cpm.filesystem.editor.windows;
 
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinBase;
@@ -44,11 +44,11 @@ public final class WindowsPlatformUtil {
     public static WinNT.HANDLE openDisk(String name) throws IOException {
         WinNT.HANDLE fileHandle = kernel32.CreateFile(
                 name,
-                268435456,
+                WinNT.GENERIC_READ | WinNT.GENERIC_WRITE,
                 0,
                 null,
-                3,
-                0x02000000,
+                WinNT.OPEN_EXISTING,
+                WinNT.FILE_FLAG_NO_BUFFERING | WinNT.FILE_FLAG_SEQUENTIAL_SCAN,
                 null);
 
         if (fileHandle == WinBase.INVALID_HANDLE_VALUE) throw new IOException(getError());

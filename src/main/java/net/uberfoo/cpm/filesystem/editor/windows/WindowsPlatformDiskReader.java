@@ -1,17 +1,18 @@
-package net.uberfoo.cpm.filesystem.editor;
+package net.uberfoo.cpm.filesystem.editor.windows;
 
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.IntByReference;
+import net.uberfoo.cpm.filesystem.editor.PlatformDiskReader;
 
 import java.io.IOException;
 
-import static net.uberfoo.cpm.filesystem.editor.WindowsPlatformUtil.closeHandle;
-import static net.uberfoo.cpm.filesystem.editor.WindowsPlatformUtil.getError;
+import static net.uberfoo.cpm.filesystem.editor.windows.WindowsPlatformUtil.closeHandle;
+import static net.uberfoo.cpm.filesystem.editor.windows.WindowsPlatformUtil.getError;
 
 public class WindowsPlatformDiskReader implements PlatformDiskReader {
 
-    private static Kernel32 kernel32 = Kernel32.INSTANCE;
+    private static final Kernel32 kernel32 = Kernel32.INSTANCE;
 
     private final WinNT.HANDLE fileHandle;
 
@@ -20,18 +21,15 @@ public class WindowsPlatformDiskReader implements PlatformDiskReader {
     }
 
     @Override
-    public byte[] read() throws IOException {
-        var arr = new byte[4096];
+    public void read(byte[] block) throws IOException {
         var bytesRead = new IntByReference();
         var success = kernel32.ReadFile(fileHandle,
-                arr,
-                4096,
+                block,
+                block.length,
                 bytesRead,
                 null);
 
         if (!success) throw new IOException(getError());
-
-        return arr;
     }
 
     @Override

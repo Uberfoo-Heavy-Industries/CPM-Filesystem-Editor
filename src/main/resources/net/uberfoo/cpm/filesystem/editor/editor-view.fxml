@@ -3,28 +3,26 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="net.uberfoo.cpm.filesystem.editor.EditorController">
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.uberfoo.cpm.filesystem.editor.EditorController">
     <top>
         <MenuBar BorderPane.alignment="CENTER">
             <menus>
                 <Menu mnemonicParsing="false" text="File">
                     <items>
-                        <MenuItem fx:id="openMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenClick"
-                                  text="Open..."/>
-                        <MenuItem fx:id="openPartDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenPartDiskClick"
-                                  text="Open Partitioned Disk Image..."/>
-                        <MenuItem fx:id="openDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenDiskClick"
-                                  text="Open Disk..."/>
-                        <MenuItem fx:id="closeMenuItem" disable="true" mnemonicParsing="false"
-                                  onAction="#onFileMenuCloseClick" text="Close"/>
-                        <SeparatorMenuItem mnemonicParsing="false"/>
-                        <MenuItem mnemonicParsing="false" onAction="#onFileMenuExitClick" text="Exit"/>
+                        <MenuItem fx:id="openMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenClick" text="Open..." />
+                        <MenuItem fx:id="openPartDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenPartDiskClick" text="Open Partitioned Disk Image..." />
+                        <MenuItem fx:id="exportPartDiskMenuItem" disable="true" mnemonicParsing="false" onAction="#onFileMenuExportPartDiskClick" text="Export Partitioned Disk..." />
+                        <MenuItem fx:id="closeMenuItem" disable="true" mnemonicParsing="false" onAction="#onFileMenuCloseClick" text="Close" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem fx:id="openDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenDiskClick" text="Open Disk..." />
+                        <MenuItem fx:id="flashDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuFlashDiskClick" text="Flash to Disk..." />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" onAction="#onFileMenuExitClick" text="Exit" />
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="About"/>
+                        <MenuItem mnemonicParsing="false" text="About" />
                     </items>
                 </Menu>
             </menus>
@@ -35,16 +33,16 @@
             <content>
                 <TreeTableView fx:id="fileTree" showRoot="false">
                     <columns>
-                        <TreeTableColumn fx:id="nameColumn" editable="false" prefWidth="147.0" text="Name">
+                        <TreeTableColumn fx:id="nameColumn" editable="false" prefWidth="256.0" text="Name">
                         </TreeTableColumn>
-                        <TreeTableColumn fx:id="sizeColumn" editable="false" prefWidth="99.0" text="Size"/>
+                        <TreeTableColumn fx:id="sizeColumn" editable="false" prefWidth="100.0" text="Size" />
                     </columns>
                     <contextMenu>
                         <ContextMenu fx:id="treeContextMenu">
                             <items>
-                                <MenuItem fx:id="treeContextMenuDeleteItem" onAction="#onContextMenuDeleteClick" mnemonicParsing="false" text="Delete"/>
-                                <MenuItem fx:id="treeContextMenuExportItem" onAction="#onContextMenuExportClick" mnemonicParsing="false" text="Export"/>
-                                <MenuItem fx:id="treeContextMenuImportItem" onAction="#onContextMenuImportClick" mnemonicParsing="false" text="Import"/>
+                                <MenuItem fx:id="treeContextMenuDeleteItem" mnemonicParsing="false" onAction="#onContextMenuDeleteClick" text="Delete" />
+                                <MenuItem fx:id="treeContextMenuExportItem" mnemonicParsing="false" onAction="#onContextMenuExportClick" text="Export" />
+                                <MenuItem fx:id="treeContextMenuImportItem" mnemonicParsing="false" onAction="#onContextMenuImportClick" text="Import" />
                             </items>
                         </ContextMenu>
                     </contextMenu>

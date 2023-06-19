@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<DialogPane prefHeight="110.0" prefWidth="444.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1">
+<DialogPane minWidth="-Infinity" prefHeight="128.0" prefWidth="302.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1">
    <buttonTypes>
       <ButtonType fx:constant="CANCEL" />
    </buttonTypes>
    <content>
-      <AnchorPane layoutY="20.0" prefHeight="20.0" prefWidth="240.0">
+      <AnchorPane layoutY="20.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="83.0" prefWidth="388.0">
          <children>
-            <ProgressBar id="progress" fx:id="progress" layoutX="107.0" layoutY="24.0" prefWidth="200.0" progress="0.0" />
+            <VBox alignment="CENTER" layoutX="28.0" layoutY="8.0" prefHeight="55.0" prefWidth="251.0">
+               <children>
+                  <ProgressBar id="progress" fx:id="progress" prefWidth="200.0" progress="0.0" />
+                  <Label fx:id="label" text="Label">
+                     <VBox.margin>
+                        <Insets top="5.0" />
+                     </VBox.margin></Label>
+               </children>
+            </VBox>
          </children>
       </AnchorPane>
    </content>

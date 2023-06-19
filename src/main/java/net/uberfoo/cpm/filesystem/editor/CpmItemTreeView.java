@@ -6,5 +6,5 @@ import javafx.beans.property.StringProperty;
 public interface CpmItemTreeView {
     StringProperty nameProperty();
 
-    LongProperty sizeProperty();
+    StringProperty sizeProperty();
 }

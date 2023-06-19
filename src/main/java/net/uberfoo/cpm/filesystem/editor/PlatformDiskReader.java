@@ -5,6 +5,6 @@ import java.io.IOException;
 
 public interface PlatformDiskReader extends Closeable {
 
-    byte[] read() throws IOException;
+    void read(byte[] block) throws IOException;
 
 }

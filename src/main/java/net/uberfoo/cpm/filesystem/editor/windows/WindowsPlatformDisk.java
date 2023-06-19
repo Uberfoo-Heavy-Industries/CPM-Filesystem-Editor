@@ -1,8 +1,13 @@
-package net.uberfoo.cpm.filesystem.editor;
+package net.uberfoo.cpm.filesystem.editor.windows;
+
+import net.uberfoo.cpm.filesystem.editor.PlatformDisk;
+import net.uberfoo.cpm.filesystem.editor.PlatformDiskFactory;
+import net.uberfoo.cpm.filesystem.editor.PlatformDiskReader;
+import net.uberfoo.cpm.filesystem.editor.PlatformDiskWriter;
 
 import java.io.IOException;
 
-import static net.uberfoo.cpm.filesystem.editor.WindowsPlatformUtil.openDisk;
+import static net.uberfoo.cpm.filesystem.editor.windows.WindowsPlatformUtil.openDisk;
 
 public class WindowsPlatformDisk implements PlatformDisk {
 

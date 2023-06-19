@@ -11,7 +11,7 @@ public class RootTreeView implements CpmItemTreeView {
     }
 
     @Override
-    public LongProperty sizeProperty() {
+    public StringProperty sizeProperty() {
         return null;
     }
 }
