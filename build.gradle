@@ -26,8 +26,11 @@ ext {
     junitVersion = '5.9.1'
 }
 
-sourceCompatibility = '20'
-targetCompatibility = '20'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(20)
+    }
+}
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -39,7 +42,7 @@ application {
 }
 
 javafx {
-    version = '19'
+    version = '20'
     modules = ['javafx.controls', 'javafx.fxml', 'javafx.base']
 }
 
@@ -61,7 +64,9 @@ dependencies {
     implementation 'net.java.dev.jna:jna-platform:5.13.0'
 
     implementation 'org.aerofx:aerofx:0.2'
-    implementation 'org.jfxtras:jmetro:11.6.15'
+    implementation ('org.jfxtras:jmetro:11.6.15') {
+        exclude group: 'org.openjfx'
+    }
 
     runtimeOnly 'org.apache.logging.log4j:log4j-core'
     runtimeOnly 'org.apache.logging.log4j:log4j-slf4j2-impl'
