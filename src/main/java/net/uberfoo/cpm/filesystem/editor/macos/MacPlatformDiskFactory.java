@@ -4,6 +4,7 @@ import com.sun.jna.platform.mac.CoreFoundation;
 import com.sun.jna.platform.mac.CoreFoundation.CFBooleanRef;
 import com.sun.jna.platform.mac.CoreFoundation.CFStringRef;
 import com.sun.jna.platform.mac.DiskArbitration;
+import net.uberfoo.cpm.filesystem.editor.GenericPlatformDisk;
 import net.uberfoo.cpm.filesystem.editor.PlatformDisk;
 import net.uberfoo.cpm.filesystem.editor.PlatformDiskFactory;
 
@@ -57,6 +58,6 @@ public class MacPlatformDiskFactory extends PlatformDiskFactory {
 
     @Override
     public PlatformDisk getDisk(OSDiskEntry disk) throws Exception {
-        return new MacPlatformDisk(disk);
+        return new GenericPlatformDisk(disk);
     }
 }

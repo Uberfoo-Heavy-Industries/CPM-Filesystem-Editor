@@ -1,4 +1,4 @@
-package net.uberfoo.cpm.filesystem.editor.macos;
+package net.uberfoo.cpm.filesystem.editor;
 
 import net.uberfoo.cpm.filesystem.editor.PlatformDiskWriter;
 import org.apache.commons.io.IOUtils;
@@ -6,14 +6,16 @@ import org.apache.commons.io.IOUtils;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
-public class MacPlatformDiskWriter implements PlatformDiskWriter {
+public class GenericPlatformDiskWriter implements PlatformDiskWriter {
 
     private final OutputStream outputStream;
 
-    public MacPlatformDiskWriter(Path path) throws IOException {
-        this.outputStream = Files.newOutputStream(path);
+    public GenericPlatformDiskWriter(Path path) throws IOException {
+        this.outputStream = Files.newOutputStream(path, StandardOpenOption.SYNC);
     }
 
     @Override

@@ -22,6 +22,7 @@ module net.uberfoo.cpm.filesystem.editor {
     requires org.jfxtras.styles.jmetro;
 
     requires org.apache.commons.io;
+    requires org.apache.commons.text;
 
     exports net.uberfoo.cpm.filesystem.editor;
     opens net.uberfoo.cpm.filesystem.editor to javafx.fxml,javafx.base;
