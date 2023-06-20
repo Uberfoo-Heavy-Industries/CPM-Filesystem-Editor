@@ -1,6 +1,7 @@
 package net.uberfoo.cpm.filesystem.editor;
 
 import com.sun.jna.Platform;
+import net.uberfoo.cpm.filesystem.editor.linux.LinuxPlatformDiskFactory;
 import net.uberfoo.cpm.filesystem.editor.macos.MacPlatformDiskFactory;
 import net.uberfoo.cpm.filesystem.editor.windows.WindowsPlatformDiskFactory;
 
@@ -16,6 +17,9 @@ public abstract class PlatformDiskFactory {
 
             case Platform.MAC:
                 return new MacPlatformDiskFactory();
+
+            case Platform.LINUX:
+                return new LinuxPlatformDiskFactory();
 
             default:
                 throw new Exception("Unsupported platform");

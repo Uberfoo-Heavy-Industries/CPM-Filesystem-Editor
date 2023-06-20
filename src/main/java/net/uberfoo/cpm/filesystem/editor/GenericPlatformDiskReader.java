@@ -1,6 +1,5 @@
-package net.uberfoo.cpm.filesystem.editor.macos;
+package net.uberfoo.cpm.filesystem.editor;
 
-import com.sun.jna.platform.mac.IOKitUtil;
 import net.uberfoo.cpm.filesystem.editor.PlatformDiskReader;
 import org.apache.commons.io.IOUtils;
 
@@ -9,12 +8,12 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class MacPlatformDiskReader implements PlatformDiskReader {
+public class GenericPlatformDiskReader implements PlatformDiskReader {
 
     private final Path diskPath;
     private final InputStream inputStream;
 
-    public MacPlatformDiskReader(Path diskPath) throws IOException {
+    public GenericPlatformDiskReader(Path diskPath) throws IOException {
         this.diskPath = diskPath;
         inputStream = Files.newInputStream(diskPath);
     }
