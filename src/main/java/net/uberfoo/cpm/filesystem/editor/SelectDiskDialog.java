@@ -27,11 +27,12 @@ public class SelectDiskDialog extends Dialog<PlatformDiskFactory.OSDiskEntry> {
 
             DialogPane dialogPane = fxmlLoader.load();
 
-            selectBox.setConverter(new StringConverter<PlatformDiskFactory.OSDiskEntry>() {
+            selectBox.setConverter(new StringConverter<>() {
                 @Override
                 public String toString(PlatformDiskFactory.OSDiskEntry entry) {
+                    if (entry == null) return null;
                     var size = String.format("%.2f", entry.size() / (1024f * 1024f));
-                    return entry.name() + " (" +entry.address() + ") " + size + "Mb";
+                    return entry.name() + " (" + entry.address() + ") " + size + "Mb";
                 }
 
                 @Override
@@ -40,11 +41,14 @@ public class SelectDiskDialog extends Dialog<PlatformDiskFactory.OSDiskEntry> {
                 }
             });
 
-            selectBox.getItems().addAll(items);
-            if (items.size() > 0) selectBox.setValue(items.get(0));
-
-            dialogPane.lookupButton(ButtonType.OK).disableProperty()
-                    .bind(selectBox.valueProperty().map(Objects::isNull));
+            if (items.size() > 0) {
+                selectBox.getItems().addAll(items);
+                selectBox.setValue(items.get(0));
+                dialogPane.lookupButton(ButtonType.OK).disableProperty()
+                        .bind(selectBox.valueProperty().map(Objects::isNull));
+            } else {
+                dialogPane.lookupButton(ButtonType.OK).setDisable(true);
+            }
 
             initOwner(owner);
             initModality(Modality.APPLICATION_MODAL);
