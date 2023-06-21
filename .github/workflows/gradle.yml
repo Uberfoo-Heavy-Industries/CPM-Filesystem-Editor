@@ -12,7 +12,7 @@ jobs:
     environment: repo-read
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
       fail-fast: false
     name: ${{ matrix.os }}
     steps:
@@ -55,3 +55,13 @@ jobs:
       with:
         name: cpm-filesystem-editor-${{ matrix.os }}-rpm
         path: build/jpackage/*.rpm
+    - name: Upload DMG as an artifact
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: cpm-filesystem-editor-${{ matrix.os }}-dmg
+        path: build/jpackage/*.dmg
+    - name: Upload DMG as an artifact
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: cpm-filesystem-editor-${{ matrix.os }}-pkg
+        path: build/jpackage/*.pkg
