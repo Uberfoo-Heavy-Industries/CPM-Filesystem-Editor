@@ -26,10 +26,11 @@ public class LinuxPlatformDiskFactory extends PlatformDiskFactory {
             for (var p : diskPaths) {
 
                 var removable = Files.readString(Path.of(p.toString() + "/removable")).startsWith("1");
-                var size = Long.valueOf(Files.readString(Path.of(p.toString() + "/size")).trim());
+                var size = Long.parseLong(Files.readString(Path.of(p.toString() + "/size")).trim());
 
                 Udev.UdevContext context = UDEV.udev_new();
                 Udev.UdevDevice dev = UDEV.udev_device_new_from_syspath(context, p.toString());
+                context.unref();
 
                 var address = dev.getPropertyValue("DEVNAME");
                 var name = StringEscapeUtils.unescapeJson(dev.getPropertyValue("ID_MODEL_ENC")
