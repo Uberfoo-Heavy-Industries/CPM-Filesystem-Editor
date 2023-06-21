@@ -58,10 +58,10 @@ jobs:
     - name: Upload DMG as an artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: cpm-filesystem-editor-${{ matrix.os }}-dmg
+        name: cpm-filesystem-editor-${{ matrix.os }}-dmg-x86_64
         path: build/jpackage/*.dmg
-    - name: Upload DMG as an artifact
+    - name: Upload PKG as an artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: cpm-filesystem-editor-${{ matrix.os }}-pkg
+        name: cpm-filesystem-editor-${{ matrix.os }}-pkg-x86_64
         path: build/jpackage/*.pkg
