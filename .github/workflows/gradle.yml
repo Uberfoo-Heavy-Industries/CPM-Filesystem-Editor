@@ -36,32 +36,38 @@ jobs:
         USERNAME: ${{ secrets.USERNAME }}
         TOKEN: ${{ secrets.TOKEN }}
     - name: Upload EXE as an artifact
+      if: ${{ matrix.os == 'windows-latest'}}
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: cpm-filesystem-editor-${{ matrix.os }}-exe
+        name: cpm-filesystem-editor-windows-exe
         path: build/jpackage/*.exe
     - name: Upload MSI as an artifact
+      if: ${{ matrix.os == 'windows-latest'}}
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: cpm-filesystem-editor-${{ matrix.os }}-msi
+        name: cpm-filesystem-editor-windows-msi
         path: build/jpackage/*.msi
     - name: Upload DEB as an artifact
+      if: ${{ matrix.os == 'ubuntu-latest'}}
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: cpm-filesystem-editor-${{ matrix.os }}-deb
+        name: cpm-filesystem-editor-linux-deb
         path: build/jpackage/*.deb
     - name: Upload RPM as an artifact
+      if: ${{ matrix.os == 'ubuntu-latest'}}
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: cpm-filesystem-editor-${{ matrix.os }}-rpm
+        name: cpm-filesystem-editor-linux-rpm
         path: build/jpackage/*.rpm
     - name: Upload DMG as an artifact
+      if: ${{ matrix.os == 'macos-latest'}}
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: cpm-filesystem-editor-${{ matrix.os }}-dmg
+        name: cpm-filesystem-editor-macos-dmg-x86_64
         path: build/jpackage/*.dmg
-    - name: Upload DMG as an artifact
+    - name: Upload PKG as an artifact
+      if: ${{ matrix.os == 'macos-latest'}}
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: cpm-filesystem-editor-${{ matrix.os }}-pkg
+        name: cpm-filesystem-editor-macos-pkg-x86_64
         path: build/jpackage/*.pkg
