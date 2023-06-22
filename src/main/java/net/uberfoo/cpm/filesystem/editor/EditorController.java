@@ -1,6 +1,12 @@
 package net.uberfoo.cpm.filesystem.editor;
 
 import javafx.application.Platform;
+import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanExpression;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.value.ObservableBooleanValue;
+import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -36,7 +42,7 @@ public class EditorController {
     private final Preferences preferences = Preferences.userNodeForPackage(EditorController.class);
 
     @FXML
-    private TreeTableView fileTree;
+    private TreeTableView<CpmItemTreeView> fileTree;
     @FXML
     private TreeTableColumn<Object, Object> nameColumn;
     @FXML
@@ -45,6 +51,8 @@ public class EditorController {
     private BorderPane rootPane;
     @FXML
     private MenuItem openMenuItem;
+    @FXML
+    private MenuItem saveMenuItem;
     @FXML
     private MenuItem openDiskMenuItem;
     @FXML
@@ -64,7 +72,7 @@ public class EditorController {
     @FXML
     private MenuItem flashDiskMenuItem;
 
-    private TreeItem<? extends CpmItemTreeView> root;
+    private TreeItem<CpmItemTreeView> root;
 
     @FXML
     public void initialize() {
@@ -74,34 +82,49 @@ public class EditorController {
         root = new TreeItem<>();
         fileTree.setRoot(root);
 
+        saveMenuItem.disableProperty()
+                .bind(BooleanExpression.booleanExpression(
+                        fileTree.getFocusModel().focusedItemProperty()
+                                .map(TreeItem::getValue)
+                                .flatMap(CpmItemTreeView::dirtyProperty)
+                                .orElse(false)).not()
+                        .and(BooleanExpression.booleanExpression(fileTree.getFocusModel().focusedItemProperty()
+                                .map(x -> x.getChildren().stream().toList())
+                                .map(x -> x.stream().map(TreeItem::getValue).toList())
+                                .map(x -> x.stream().map(CpmItemTreeView::dirtyProperty).toList())
+                                .map(x -> x.stream().map(BooleanProperty::getValue).toList())
+                                .map(x -> x.stream().noneMatch(y -> y))
+                                .orElse(true)))
+                );
+
         closeMenuItem.disableProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
-                        .<Boolean>map(x -> !(((TreeItem) x).getValue() instanceof ClosableItem))
+                        .<Boolean>map(x -> !(x.getValue() instanceof ClosableItem))
                         .orElse(true));
 
         treeContextMenuDeleteItem.visibleProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
-                        .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof DeletableItem))
+                        .<Boolean>map(x -> (x.getValue() instanceof DeletableItem))
                         .orElse(true));
 
         treeContextMenuExportItem.visibleProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
-                        .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof ExportableItem))
+                        .<Boolean>map(x -> (x.getValue() instanceof ExportableItem))
                         .orElse(true));
 
         treeContextMenuImportItem.visibleProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
-                        .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof AcceptsImports))
+                        .<Boolean>map(x -> (x.getValue() instanceof AcceptsImports))
                         .orElse(true));
 
         exportPartDiskMenuItem.disableProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
-                        .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof PartitionTreeView))
+                        .<Boolean>map(x -> (x.getValue() instanceof PartitionTreeView))
                         .orElse(true));
 
         flashDiskMenuItem.disableProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
-                        .<Boolean>map(x -> (((TreeItem) x).getValue() instanceof PartitionTreeView))
+                        .<Boolean>map(x -> (x.getValue() instanceof PartitionTreeView))
                         .orElse(true));
 
         fileTree.setRowFactory(view -> {
@@ -145,6 +168,7 @@ public class EditorController {
     protected void onFileMenuOpenClick() {
         var selectDpbDialog = new SelectDpbDialog(rootPane.getScene().getWindow(),
                 List.of(new DiskParameterBlockView("Z80 Retro Badge", PartitionTables.Z80RB_DPB),
+                        new DiskParameterBlockView("Z80 Retro Badge (boot)", PartitionTables.Z80RB_BOOT_DPB),
                         new DiskParameterBlockView("Osborne 1", PartitionTables.OSBORNE_1_DPB)));
         WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectDpbDialog, selectDpbDialog.getWidth(), selectDpbDialog.getHeight());
         var result = selectDpbDialog.showAndWait();
@@ -158,11 +182,12 @@ public class EditorController {
                 .setValue(Path.of(preferences.get("LAST_PATH", System.getProperty("user.home"))).toFile());
 
         File file = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
-        if (file != null) preferences.put("LAST_PATH", file.getParentFile().getPath());
+        if (file == null)  return;
+        preferences.put("LAST_PATH", file.getParentFile().getPath());
 
-        try (var channel = new RandomAccessFile(file, "rw").getChannel()) {
-            var disk = new CpmDisk(result.get().toDiskParameterBlock(), channel);
-            var diskRoot = new TreeItem<>(new CpmDiskTreeView(disk, file.getName(), channel));
+        try {
+            var disk = new CpmDisk(result.get().toDiskParameterBlock(), ByteBuffer.wrap(Files.readAllBytes(file.toPath())));
+            var diskRoot = new TreeItem<>(new CpmDiskTreeView(disk, file.getName()));
 
             refreshDisk(diskRoot);
 
@@ -184,10 +209,12 @@ public class EditorController {
         fileChooser.initialDirectoryProperty()
                 .setValue(Path.of(preferences.get("LAST_PART_DISK_PATH", System.getProperty("user.home"))).toFile());
         File file = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
-        if (file != null) preferences.put("LAST_PART_DISK_PATH", file.getParentFile().getPath());
-        try (var channel = new RandomAccessFile(file, "rw").getChannel()) {
-            var disk = new PartitionedDisk(channel.map(FileChannel.MapMode.READ_WRITE, 0, channel.size()), result.get().getPartitionTable());
-            openPartitionDisk(disk, file.getName(), channel);
+        if (file == null) return;
+        preferences.put("LAST_PART_DISK_PATH", file.getParentFile().getPath());
+
+        try {
+            var disk = new PartitionedDisk(ByteBuffer.wrap(Files.readAllBytes(file.toPath())));
+            openPartitionDisk(disk, file.getName());
         } catch (IOException | ClassNotFoundException e) {
             AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
         }
@@ -202,8 +229,8 @@ public class EditorController {
         return result;
     }
 
-    private void openPartitionDisk(PartitionedDisk disk, String name, Closeable channel) {
-        var diskRoot = new TreeItem<CpmItemTreeView>(new PartitionedDiskView(name, disk, channel));
+    private void openPartitionDisk(PartitionedDisk disk, String name) {
+        var diskRoot = new TreeItem<CpmItemTreeView>(new PartitionedDiskView(name, disk));
         refreshPartitionedDisk(diskRoot);
         root.getChildren().add((TreeItem)diskRoot);
     }
@@ -211,7 +238,7 @@ public class EditorController {
     @FXML
     protected void onFileMenuCloseClick() {
         try {
-            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof ClosableItem diskView) {
+            if (((TreeItem<?>) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof ClosableItem diskView) {
                 diskView.close();
                 root.getChildren().remove(fileTree.getFocusModel().getFocusedItem());
             }
@@ -222,8 +249,12 @@ public class EditorController {
 
     @FXML
     protected void onContextMenuDeleteClick() {
+
         try {
-            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof DeletableItem item) {
+            if (((TreeItem<?>) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof DeletableItem item) {
+                if (!showConfirmDialog("Are you sure you want to delete this file?", "Confirm Delete")) {
+                    return;
+                }
                 item.delete();
                 var parent = ((TreeItem<? extends CpmItemTreeView>) fileTree.getFocusModel().getFocusedItem())
                         .parentProperty().get()
@@ -240,7 +271,7 @@ public class EditorController {
     @FXML
     protected void onContextMenuExportClick() {
         try {
-            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof ExportableItem item) {
+            if (((TreeItem<?>) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof ExportableItem item) {
                 var fileChooser = new FileChooser();
                 fileChooser.setTitle("Export File");
                 fileChooser.setInitialFileName(item.getName());
@@ -252,6 +283,7 @@ public class EditorController {
                 else return;
 
                 if (file.exists()) {
+
                     Files.delete(file.toPath());
                 }
 
@@ -321,7 +353,7 @@ public class EditorController {
                             }
                         }
                         PartitionedDisk partitionedDisk = new PartitionedDisk(bb.rewind(), tableResult.orElseThrow().getPartitionTable());
-                        openPartitionDisk(partitionedDisk, addr, () -> {});
+                        openPartitionDisk(partitionedDisk, addr);
                     } catch (Exception e) {
                         e.printStackTrace();
                         AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
@@ -345,9 +377,41 @@ public class EditorController {
     }
 
     @FXML
+    protected void onFileMenuSaveClick() {
+        try {
+            if (((TreeItem<? extends CpmItemTreeView>) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof SavableItem item) {
+                var fileChooser = new FileChooser();
+                fileChooser.setTitle("Save File");
+                fileChooser.initialDirectoryProperty()
+                        .setValue(Path.of(preferences.get("LAST_EXPORT_PATH", System.getProperty("user.home"))).toFile());
+                File file = fileChooser.showSaveDialog(rootPane.getScene().getWindow());
+
+                if (file == null) return;
+                preferences.put("LAST_EXPORT_PATH", file.getParentFile().getPath());
+
+                if (file.exists()) {
+                    Files.delete(file.toPath());
+                }
+
+                try (var channel = FileChannel.open(file.toPath(), StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND)) {
+                    item.save(channel);
+                    if (item instanceof PartitionedDiskView) {
+                        fileTree.getFocusModel().getFocusedItem().getChildren().forEach(x -> x.getValue().dirtyProperty().setValue(false));
+                    } else {
+                        item.dirtyProperty().setValue(false);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
+        }
+    }
+
+    @FXML
     protected void onFileMenuExportPartDiskClick() {
         try {
-            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof PartitionedDiskView item) {
+            if (((TreeItem<?>) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof PartitionedDiskView item) {
                 var fileChooser = new FileChooser();
                 fileChooser.setTitle("Export File");
                 fileChooser.initialDirectoryProperty()
@@ -361,7 +425,6 @@ public class EditorController {
                     Files.delete(file.toPath());
                 }
 
-                Files.write(Files.createFile(file.toPath()), item.partitionedDisk().createDisk().array(), StandardOpenOption.APPEND);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -372,10 +435,14 @@ public class EditorController {
     @FXML
     protected void onFileMenuFlashDiskClick() {
         try {
-            if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof PartitionedDiskView item) {
+            if (((TreeItem<?>) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof PartitionedDiskView item) {
                 PlatformDiskFactory.OSDiskEntry selection = getOsDiskEntry();
 
                 if (selection == null) return;
+
+                if (!showConfirmDialog("This will overwrite the contents of this device. Are you sure you want to do this?", "Confirm Flash")) {
+                    return;
+                }
 
                 var progressDialog = new ProgressDialog(rootPane.getScene().getWindow(), selection.size(), "Flashing disk...");
                 WindowUtil.positionDialog(rootPane.getScene().getWindow(), progressDialog, progressDialog.getWidth(), progressDialog.getHeight());
@@ -535,4 +602,20 @@ public class EditorController {
         return stage;
     }
 
+    private boolean showConfirmDialog(String prompt, String title) {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle(title);
+        dialog.setContentText(prompt);
+        var yesButton = new ButtonType("Yes", ButtonBar.ButtonData.YES);
+        var noButton = new ButtonType("No", ButtonBar.ButtonData.NO);
+        dialog.getDialogPane().getButtonTypes().addAll(yesButton, noButton);
+        dialog.setResultConverter(type -> type == yesButton);
+        WindowUtil.positionDialog(rootPane.getScene().getWindow(), dialog);
+        return dialog.showAndWait().orElseThrow();
+    }
+
+    private static boolean areChildrenDirty(TreeItem<PartitionedDiskView> treeItem) {
+        return treeItem.getChildren().stream()
+                .noneMatch(child -> child.getValue().dirtyProperty().getValue());
+    }
 }

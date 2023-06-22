@@ -1,8 +1,6 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.LongProperty;
-import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 
 public class RootTreeView implements CpmItemTreeView {
     @Override
@@ -13,5 +11,10 @@ public class RootTreeView implements CpmItemTreeView {
     @Override
     public StringProperty sizeProperty() {
         return null;
+    }
+
+    @Override
+    public BooleanProperty dirtyProperty() {
+        return new ReadOnlyBooleanWrapper(false);
     }
 }
