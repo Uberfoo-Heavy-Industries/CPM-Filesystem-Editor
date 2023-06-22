@@ -425,7 +425,7 @@ public class EditorController {
 
                 if (selection == null) return;
 
-                if (showConfirmDialog("This will overwrite the contents of this device. Are you sure you want to do this?", "Confirm Flash")) {
+                if (!showConfirmDialog("This will overwrite the contents of this device. Are you sure you want to do this?", "Confirm Flash")) {
                     return;
                 }
 
