@@ -1,9 +1,6 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
 
 import java.io.IOException;
@@ -16,9 +13,12 @@ public class PartitionedDiskView implements CpmItemTreeView, ClosableItem, Savab
     private final PartitionedDisk partitionedDisk;
     private final StringProperty nameProperty;
 
+    private final BooleanProperty dirtyProperty;
+
     public PartitionedDiskView(String name, PartitionedDisk partitionedDisk) {
         this.partitionedDisk = partitionedDisk;
         nameProperty = new SimpleStringProperty(name);
+        dirtyProperty = new SimpleBooleanProperty(false);
     }
 
     @Override
@@ -46,6 +46,7 @@ public class PartitionedDiskView implements CpmItemTreeView, ClosableItem, Savab
 
     @Override
     public BooleanProperty dirtyProperty() {
-        return null;
+        return dirtyProperty;
     }
+
 }

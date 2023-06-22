@@ -1,12 +1,7 @@
 package net.uberfoo.cpm.filesystem.editor;
 
 import javafx.application.Platform;
-import javafx.beans.Observable;
-import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanExpression;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.value.ObservableBooleanValue;
-import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -21,10 +16,8 @@ import javafx.stage.Stage;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileAlreadyExistsException;
@@ -43,20 +36,31 @@ public class EditorController {
 
     @FXML
     private TreeTableView<CpmItemTreeView> fileTree;
+
     @FXML
-    private TreeTableColumn<Object, Object> nameColumn;
+    private TreeTableColumn<CpmItemTreeView, String> nameColumn;
+
     @FXML
-    private TreeTableColumn sizeColumn;
+    private TreeTableColumn<CpmItemTreeView, String> sizeColumn;
+
     @FXML
     private BorderPane rootPane;
+
     @FXML
     private MenuItem openMenuItem;
+
     @FXML
     private MenuItem saveMenuItem;
+
     @FXML
     private MenuItem openDiskMenuItem;
+
+    @FXML
+    private MenuItem openPartDiskMenuItem;
+
     @FXML
     private MenuItem closeMenuItem;
+
     @FXML
     private MenuItem treeContextMenuDeleteItem;
 
@@ -67,9 +71,6 @@ public class EditorController {
     private MenuItem treeContextMenuImportItem;
 
     @FXML
-    private MenuItem exportPartDiskMenuItem;
-
-    @FXML
     private MenuItem flashDiskMenuItem;
 
     private TreeItem<CpmItemTreeView> root;
@@ -77,6 +78,7 @@ public class EditorController {
     @FXML
     public void initialize() {
         nameColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("name"));
+        nameColumn.setCellFactory(x -> new NameCell());
         sizeColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("size"));
 
         root = new TreeItem<>();
@@ -88,13 +90,9 @@ public class EditorController {
                                 .map(TreeItem::getValue)
                                 .flatMap(CpmItemTreeView::dirtyProperty)
                                 .orElse(false)).not()
-                        .and(BooleanExpression.booleanExpression(fileTree.getFocusModel().focusedItemProperty()
-                                .map(x -> x.getChildren().stream().toList())
-                                .map(x -> x.stream().map(TreeItem::getValue).toList())
-                                .map(x -> x.stream().map(CpmItemTreeView::dirtyProperty).toList())
-                                .map(x -> x.stream().map(BooleanProperty::getValue).toList())
-                                .map(x -> x.stream().noneMatch(y -> y))
-                                .orElse(true)))
+                        .or(BooleanExpression.booleanExpression(fileTree.getFocusModel().focusedItemProperty()
+                                .map(TreeItem::getValue)
+                                .map(x -> x instanceof PartitionTreeView)))
                 );
 
         closeMenuItem.disableProperty()
@@ -117,18 +115,13 @@ public class EditorController {
                         .<Boolean>map(x -> (x.getValue() instanceof AcceptsImports))
                         .orElse(true));
 
-        exportPartDiskMenuItem.disableProperty()
-                .bind(fileTree.getFocusModel().focusedItemProperty()
-                        .<Boolean>map(x -> (x.getValue() instanceof PartitionTreeView))
-                        .orElse(true));
-
         flashDiskMenuItem.disableProperty()
                 .bind(fileTree.getFocusModel().focusedItemProperty()
                         .<Boolean>map(x -> (x.getValue() instanceof PartitionTreeView))
                         .orElse(true));
 
         fileTree.setRowFactory(view -> {
-            var row = new TreeTableRow();
+            var row = new TreeTableRow<CpmItemTreeView>();
             row.setOnDragOver(e -> {
                 var dragBoard = e.getDragboard();
                 if (dragBoard.hasFiles()
@@ -187,11 +180,11 @@ public class EditorController {
 
         try {
             var disk = new CpmDisk(result.get().toDiskParameterBlock(), ByteBuffer.wrap(Files.readAllBytes(file.toPath())));
-            var diskRoot = new TreeItem<>(new CpmDiskTreeView(disk, file.getName()));
+            var diskRoot = new TreeItem<CpmItemTreeView>(new CpmDiskTreeView(disk, file.getName()));
 
             refreshDisk(diskRoot);
 
-            root.getChildren().add((TreeItem)diskRoot);
+            root.getChildren().add(diskRoot);
         } catch (IOException e) {
             AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
         }
@@ -214,7 +207,7 @@ public class EditorController {
 
         try {
             var disk = new PartitionedDisk(ByteBuffer.wrap(Files.readAllBytes(file.toPath())));
-            openPartitionDisk(disk, file.getName());
+            openPartitionDisk(disk, file.getName(), false);
         } catch (IOException | ClassNotFoundException e) {
             AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
         }
@@ -229,10 +222,11 @@ public class EditorController {
         return result;
     }
 
-    private void openPartitionDisk(PartitionedDisk disk, String name) {
+    private void openPartitionDisk(PartitionedDisk disk, String name, boolean dirty) {
         var diskRoot = new TreeItem<CpmItemTreeView>(new PartitionedDiskView(name, disk));
-        refreshPartitionedDisk(diskRoot);
-        root.getChildren().add((TreeItem)diskRoot);
+        refreshPartitionedDisk((TreeItem)diskRoot);
+        diskRoot.getValue().dirtyProperty().setValue(dirty);
+        root.getChildren().add(diskRoot);
     }
 
     @FXML
@@ -353,7 +347,7 @@ public class EditorController {
                             }
                         }
                         PartitionedDisk partitionedDisk = new PartitionedDisk(bb.rewind(), tableResult.orElseThrow().getPartitionTable());
-                        openPartitionDisk(partitionedDisk, addr);
+                        openPartitionDisk(partitionedDisk, addr, true);
                     } catch (Exception e) {
                         e.printStackTrace();
                         AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
@@ -384,6 +378,7 @@ public class EditorController {
                 fileChooser.setTitle("Save File");
                 fileChooser.initialDirectoryProperty()
                         .setValue(Path.of(preferences.get("LAST_EXPORT_PATH", System.getProperty("user.home"))).toFile());
+                fileChooser.setInitialFileName(item.nameProperty().getValue());
                 File file = fileChooser.showSaveDialog(rootPane.getScene().getWindow());
 
                 if (file == null) return;
@@ -392,6 +387,8 @@ public class EditorController {
                 if (file.exists()) {
                     Files.delete(file.toPath());
                 }
+
+                item.nameProperty().setValue(file.getName());
 
                 try (var channel = FileChannel.open(file.toPath(), StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND)) {
                     item.save(channel);
@@ -518,17 +515,18 @@ public class EditorController {
         diskRoot.expandedProperty().set(expanded);
     }
 
-    private void refreshPartitionedDisk(TreeItem<CpmItemTreeView> diskRoot) {
-        var expanded = diskRoot.isExpanded();
-        diskRoot.getChildren().clear();
-        ((PartitionedDiskView) diskRoot.getValue()).partitionedDisk().getDisks().stream()
+    private void refreshPartitionedDisk(TreeItem<PartitionedDiskView> root) {
+        var expanded = root.isExpanded();
+        root.getChildren().clear();
+        root.getValue().partitionedDisk().getDisks().stream()
                 .map(d -> new PartitionTreeView(d.disk(), d.label()))
-                .map(TreeItem<CpmItemTreeView>::new)
+                .map(TreeItem::new)
                 .forEach(t -> {
                     refreshDisk(t);
-                    diskRoot.getChildren().add(t);
+                    root.getValue().dirtyProperty().bindBidirectional(t.getValue().dirtyProperty());
+                    root.getChildren().add((TreeItem)t);
                 });
-        diskRoot.expandedProperty().set(expanded);
+        root.expandedProperty().set(expanded);
     }
 
     private void copyFile(AcceptsImports disk, File file, String filename, int userNum) {
