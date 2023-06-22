@@ -75,6 +75,8 @@ public class EditorController {
 
     private TreeItem<CpmItemTreeView> root;
 
+    private static int diskNo = 1;
+
     @FXML
     public void initialize() {
         nameColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("name"));
@@ -154,6 +156,11 @@ public class EditorController {
 
     @FXML
     protected void onFileMenuExitClick() {
+        if (root.getChildren().stream().anyMatch(x -> x.getValue().dirtyProperty().get())) {
+            if (!showConfirmDialog("There are unsaved disks. Are you sure you want to exit?", "Confirm Exit")) {
+                return;
+            }
+        }
         Platform.exit();
     }
 
@@ -206,7 +213,7 @@ public class EditorController {
         preferences.put("LAST_PART_DISK_PATH", file.getParentFile().getPath());
 
         try {
-            var disk = new PartitionedDisk(ByteBuffer.wrap(Files.readAllBytes(file.toPath())));
+            var disk = new PartitionedDisk(ByteBuffer.wrap(Files.readAllBytes(file.toPath())), result.get().getPartitionTable());
             openPartitionDisk(disk, file.getName(), false);
         } catch (IOException | ClassNotFoundException e) {
             AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
@@ -233,6 +240,11 @@ public class EditorController {
     protected void onFileMenuCloseClick() {
         try {
             if (((TreeItem<?>) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof ClosableItem diskView) {
+                if (diskView.dirtyProperty().get()) {
+                    if (!showConfirmDialog("Disk image has not been saved. Are you sure you want to close it?", "Confirm Close")) {
+                        return;
+                    }
+                }
                 diskView.close();
                 root.getChildren().remove(fileTree.getFocusModel().getFocusedItem());
             }
@@ -293,7 +305,7 @@ public class EditorController {
 
     @FXML
     protected void onContextMenuImportClick() {
-        if (((TreeItem) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof AcceptsImports item) {
+        if ((fileTree.getFocusModel().getFocusedItem()).getValue() instanceof AcceptsImports item) {
             var fileChooser = new FileChooser();
             fileChooser.setTitle("Import File");
             fileChooser.initialDirectoryProperty()
@@ -319,7 +331,7 @@ public class EditorController {
 
             PlatformDiskFactory.OSDiskEntry selection = getOsDiskEntry();
             if (selection == null) return;
-            var addr = selection.address();
+            var name = "disk" + diskNo++ + ".img";
 
             ByteBuffer bb = ByteBuffer.allocate((int)selection.size());
 
@@ -347,7 +359,7 @@ public class EditorController {
                             }
                         }
                         PartitionedDisk partitionedDisk = new PartitionedDisk(bb.rewind(), tableResult.orElseThrow().getPartitionTable());
-                        openPartitionDisk(partitionedDisk, addr, true);
+                        openPartitionDisk(partitionedDisk, name, true);
                     } catch (Exception e) {
                         e.printStackTrace();
                         AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
@@ -406,30 +418,6 @@ public class EditorController {
     }
 
     @FXML
-    protected void onFileMenuExportPartDiskClick() {
-        try {
-            if (((TreeItem<?>) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof PartitionedDiskView item) {
-                var fileChooser = new FileChooser();
-                fileChooser.setTitle("Export File");
-                fileChooser.initialDirectoryProperty()
-                        .setValue(Path.of(preferences.get("LAST_EXPORT_PATH", System.getProperty("user.home"))).toFile());
-                File file = fileChooser.showSaveDialog(rootPane.getScene().getWindow());
-
-                if (file != null) preferences.put("LAST_EXPORT_PATH", file.getParentFile().getPath());
-                else return;
-
-                if (file.exists()) {
-                    Files.delete(file.toPath());
-                }
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
-        }
-    }
-
-    @FXML
     protected void onFileMenuFlashDiskClick() {
         try {
             if (((TreeItem<?>) fileTree.getFocusModel().getFocusedItem()).getValue() instanceof PartitionedDiskView item) {
@@ -437,7 +425,7 @@ public class EditorController {
 
                 if (selection == null) return;
 
-                if (!showConfirmDialog("This will overwrite the contents of this device. Are you sure you want to do this?", "Confirm Flash")) {
+                if (showConfirmDialog("This will overwrite the contents of this device. Are you sure you want to do this?", "Confirm Flash")) {
                     return;
                 }
 
@@ -612,8 +600,4 @@ public class EditorController {
         return dialog.showAndWait().orElseThrow();
     }
 
-    private static boolean areChildrenDirty(TreeItem<PartitionedDiskView> treeItem) {
-        return treeItem.getChildren().stream()
-                .noneMatch(child -> child.getValue().dirtyProperty().getValue());
-    }
 }
