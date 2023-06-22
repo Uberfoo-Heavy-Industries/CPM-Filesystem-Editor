@@ -1,6 +1,6 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.Property;
+import javafx.beans.property.DoubleProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Dialog;
@@ -49,7 +49,7 @@ public class ProgressDialog extends Dialog<Void> {
 
     }
 
-    public Property progressProperty() {
+    public DoubleProperty progressProperty() {
         return progress.progressProperty();
     }
 
