@@ -19,4 +19,12 @@ public class WindowUtil
         dialog.setY(y);
         dialog.setX(x);
     }
+
+    public static void positionDialog(Window scene, Dialog<?> dialog) {
+        dialog.initOwner(scene);
+        var x = scene.getX() + scene.getWidth() / 2 - dialog.getWidth() / 2;
+        var y = scene.getY() + scene.getHeight() / 2 - dialog.getHeight() / 2;
+        dialog.setY(y);
+        dialog.setX(x);
+    }
 }

@@ -1,19 +1,29 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
 
-import java.io.Closeable;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 
 import static net.uberfoo.cpm.filesystem.editor.Util.toMegabytes;
 
-public record PartitionedDiskView(String name, PartitionedDisk partitionedDisk, Closeable channel) implements CpmItemTreeView, ClosableItem {
+public class PartitionedDiskView implements CpmItemTreeView, ClosableItem, SavableItem {
+
+    private final PartitionedDisk partitionedDisk;
+    private final StringProperty nameProperty;
+
+    private final BooleanProperty dirtyProperty;
+
+    public PartitionedDiskView(String name, PartitionedDisk partitionedDisk) {
+        this.partitionedDisk = partitionedDisk;
+        nameProperty = new SimpleStringProperty(name);
+        dirtyProperty = new SimpleBooleanProperty(false);
+    }
 
     @Override
     public StringProperty nameProperty() {
-        return new ReadOnlyStringWrapper(this, "name", name);
+        return nameProperty;
     }
 
     @Override
@@ -21,8 +31,22 @@ public record PartitionedDiskView(String name, PartitionedDisk partitionedDisk, 
         return new ReadOnlyStringWrapper(this, "size", toMegabytes(partitionedDisk.getDiskSize()));
     }
 
+    public PartitionedDisk partitionedDisk() {
+        return partitionedDisk;
+    }
+
     @Override
     public void close() throws IOException {
-        channel.close();
     }
+
+    @Override
+    public void save(FileChannel channel) throws Exception {
+        channel.write(partitionedDisk.createDisk());
+    }
+
+    @Override
+    public BooleanProperty dirtyProperty() {
+        return dirtyProperty;
+    }
+
 }

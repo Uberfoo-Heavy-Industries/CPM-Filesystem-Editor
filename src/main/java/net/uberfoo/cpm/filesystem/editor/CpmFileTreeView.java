@@ -1,14 +1,21 @@
 package net.uberfoo.cpm.filesystem.editor;
 
-import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
+import net.uberfoo.cpm.filesystem.AllocationTableEntry;
 import net.uberfoo.cpm.filesystem.AllocationTableFile;
 
 import java.nio.ByteBuffer;
 
 import static net.uberfoo.cpm.filesystem.editor.Util.toByteUnit;
 
-public record CpmFileTreeView(AllocationTableFile file, DiskItem parent) implements CpmItemTreeView, DeletableItem, ExportableItem {
+public class CpmFileTreeView implements CpmItemTreeView, DeletableItem, ExportableItem {
+
+    private final AllocationTableFile file;
+    private final DiskItem parent;
+    public CpmFileTreeView(AllocationTableFile file, DiskItem parent) {
+        this.file = file;
+        this.parent = parent;
+    }
 
     public StringProperty nameProperty() {
         return new ReadOnlyStringWrapper(this, "name", file.getFilename());
@@ -19,8 +26,14 @@ public record CpmFileTreeView(AllocationTableFile file, DiskItem parent) impleme
     }
 
     @Override
+    public BooleanProperty dirtyProperty() {
+        return new ReadOnlyBooleanWrapper(false);
+    }
+
+    @Override
     public void delete() {
         file.delete();
+        parent.dirtyProperty().setValue(true);
     }
 
     @Override
@@ -31,5 +44,13 @@ public record CpmFileTreeView(AllocationTableFile file, DiskItem parent) impleme
     @Override
     public String getName() {
         return file.getFilename();
+    }
+
+    public DiskItem parent() {
+        return parent;
+    }
+
+    public AllocationTableFile file() {
+        return file;
     }
 }
