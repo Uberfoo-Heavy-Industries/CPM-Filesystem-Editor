@@ -66,7 +66,7 @@ dependencies {
     implementation 'net.java.dev.jna:jna-platform:5.13.0'
 
     implementation 'org.aerofx:aerofx:0.2'
-    implementation ('org.jfxtras:jmetro:11.6.15') {
+    implementation ('org.jfxtras:jmetro:11.6.16') {
         exclude group: 'org.openjfx'
     }
 
