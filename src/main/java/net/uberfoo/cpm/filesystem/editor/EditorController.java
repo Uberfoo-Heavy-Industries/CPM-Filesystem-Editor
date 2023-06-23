@@ -4,15 +4,11 @@ import javafx.application.Platform;
 import javafx.beans.binding.BooleanExpression;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TreeItemPropertyValueFactory;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
 
@@ -549,7 +545,11 @@ public class EditorController {
     }
 
     private void copyFilesToCpm(DiskItem diskView, List<File> files, String name) {
-        CopyFileController controller = getCopyFileController(files, name);
+        CopyFileDialog controller = getCopyFileController(files, name);
+
+        if (!controller.showAndWait().orElse(false)) {
+            return;
+        }
 
         var filename = controller.getFilename();
         var userNum = controller.getUserNumber();
@@ -558,34 +558,13 @@ public class EditorController {
         copyFile(diskView, files.get(0), filename, userNum);
     }
 
-    private CopyFileController getCopyFileController(List<File> files, String name) {
-        FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("copy-file-view.fxml"));
-        Stage stage = loadCopyFileView(name, fxmlLoader);
-
-        var controller = (CopyFileController) fxmlLoader.getController();
+    private CopyFileDialog getCopyFileController(List<File> files, String name) {
+        var controller = new CopyFileDialog(rootPane.getScene().getWindow(), "Import File", name);
         // TODO: Support copying one file for now
         controller.setNormalizedFilename(files.get(0).getName());
-        controller.setCopyButtonText(name);
-        if (stage != null) {
-            stage.showAndWait();
-        }
-        return controller;
-    }
 
-    private Stage loadCopyFileView(String title, FXMLLoader fxmlLoader) {
-        Stage stage = new Stage();
-        stage.setTitle(title + " file");
-        stage.initOwner(rootPane.getScene().getWindow());
-        stage.initModality(Modality.APPLICATION_MODAL);
-        try {
-            WindowUtil.positionDialog(rootPane.getScene().getWindow(), stage, 310, 143);
-            stage.setScene(new Scene(fxmlLoader.load(), 310, 143));
-        } catch (IOException e) {
-            e.printStackTrace();;
-            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
-            return null;
-        }
-        return stage;
+        WindowUtil.positionDialog(rootPane.getScene().getWindow(), controller, 310, 143);
+        return controller;
     }
 
     private boolean showConfirmDialog(String prompt, String title) {
