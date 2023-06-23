@@ -273,7 +273,8 @@ public class EditorController {
             var fileChooser = new FileChooser();
             fileChooser.setTitle("Import File");
             fileChooser.initialDirectoryProperty()
-                    .setValue(Path.of(preferences.get("LAST_IMPORT_PATH", System.getProperty("user.home"))).toFile());
+                    .setValue(Path.of(preferences.get("LAST_IMPORT_PATH", System.getProperty("user.home")))
+                            .toFile());
 
             File file = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
             if (file != null) preferences.put("LAST_IMPORT_PATH", file.getParentFile().getPath());
@@ -482,13 +483,20 @@ public class EditorController {
     }
 
     private void copyFile(AcceptsImports disk, File file, String filename, int userNum) {
+        ByteBuffer buffer = null;
         try (var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ)) {
-            disk.importFile(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()), filename, userNum);
+            buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+            disk.importFile(buffer, filename, userNum);
         } catch (FileAlreadyExistsException e) {
-            e.printStackTrace();
-            AlertDialogs.fileExistsAlert(rootPane.getScene().getWindow(), e);
+            var confirmed = showConfirmDialog("File " + userNum + ":" + filename + " already exists. Do you wish to overwrite it?", "Confirm Overwrite");
+            if (confirmed) {
+                try {
+                    disk.importFile(buffer, filename, userNum, true);
+                } catch (IOException f) {
+                    AlertDialogs.fileErrorAlert(rootPane.getScene().getWindow(), f);
+                }
+            }
         } catch (IOException e) {
-            e.printStackTrace();
             AlertDialogs.fileErrorAlert(rootPane.getScene().getWindow(), e);
         }
     }
