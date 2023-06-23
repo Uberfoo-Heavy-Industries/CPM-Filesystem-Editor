@@ -98,14 +98,6 @@ public class CopyFileDialog extends Dialog<Boolean> {
         return userNumber.get();
     }
 
-    public IntegerProperty userNumberProperty() {
-        return userNumber;
-    }
-
-    public void setUserNumber(int userNumber) {
-        this.userNumber.set(userNumber);
-    }
-
     public String getFilename() {
         return filename.get();
     }

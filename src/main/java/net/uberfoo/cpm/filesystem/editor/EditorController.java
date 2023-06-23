@@ -6,7 +6,6 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TreeItemPropertyValueFactory;
-import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import net.uberfoo.cpm.filesystem.CpmDisk;
@@ -76,7 +75,7 @@ public class EditorController {
     @FXML
     public void initialize() {
         nameColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("name"));
-        nameColumn.setCellFactory(x -> new NameCell());
+        nameColumn.setCellFactory(x -> new NameCell(this::copyFilesToCpm, this::refreshDisk));
         sizeColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("size"));
 
         root = new TreeItem<>();
@@ -117,37 +116,6 @@ public class EditorController {
                 .bind(fileTree.getFocusModel().focusedItemProperty()
                         .<Boolean>map(x -> (x.getValue() instanceof PartitionTreeView))
                         .orElse(true));
-
-        fileTree.setRowFactory(view -> {
-            var row = new TreeTableRow<CpmItemTreeView>();
-            row.setOnDragOver(e -> {
-                var dragBoard = e.getDragboard();
-                if (dragBoard.hasFiles()
-                        && row.getTreeItem() != null
-                        && row.getTreeItem().getValue() instanceof CpmDiskTreeView) {
-                    e.acceptTransferModes(TransferMode.COPY);
-                }
-                e.consume();
-            });
-            row.setOnDragDropped(e -> {
-                var dragBoard = e.getDragboard();
-                if (dragBoard.hasFiles() && row.getTreeItem() != null
-                        && row.getTreeItem().getValue() instanceof CpmDiskTreeView diskTreeItem) {
-                    copyFilesToCpm(diskTreeItem, dragBoard.getFiles(), "Copy");
-                    refreshDisk(row.getTreeItem());
-                }
-            });
-            return row;
-        });
-
-        fileTree.setOnDragOver(e -> {
-            var db = e.getDragboard();
-            if (db.hasFiles()) {
-                e.acceptTransferModes(TransferMode.COPY);
-            }
-            e.consume();
-        });
-
     }
 
     @FXML
