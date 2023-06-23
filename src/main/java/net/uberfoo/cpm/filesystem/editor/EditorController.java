@@ -4,15 +4,10 @@ import javafx.application.Platform;
 import javafx.beans.binding.BooleanExpression;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TreeItemPropertyValueFactory;
-import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
 
@@ -80,7 +75,7 @@ public class EditorController {
     @FXML
     public void initialize() {
         nameColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("name"));
-        nameColumn.setCellFactory(x -> new NameCell());
+        nameColumn.setCellFactory(x -> new NameCell(this::copyFilesToCpm, this::refreshDisk));
         sizeColumn.setCellValueFactory(new TreeItemPropertyValueFactory<>("size"));
 
         root = new TreeItem<>();
@@ -121,37 +116,6 @@ public class EditorController {
                 .bind(fileTree.getFocusModel().focusedItemProperty()
                         .<Boolean>map(x -> (x.getValue() instanceof PartitionTreeView))
                         .orElse(true));
-
-        fileTree.setRowFactory(view -> {
-            var row = new TreeTableRow<CpmItemTreeView>();
-            row.setOnDragOver(e -> {
-                var dragBoard = e.getDragboard();
-                if (dragBoard.hasFiles()
-                        && row.getTreeItem() != null
-                        && row.getTreeItem().getValue() instanceof CpmDiskTreeView) {
-                    e.acceptTransferModes(TransferMode.COPY);
-                }
-                e.consume();
-            });
-            row.setOnDragDropped(e -> {
-                var dragBoard = e.getDragboard();
-                if (dragBoard.hasFiles() && row.getTreeItem() != null
-                        && row.getTreeItem().getValue() instanceof CpmDiskTreeView diskTreeItem) {
-                    copyFilesToCpm(diskTreeItem, dragBoard.getFiles(), "Copy");
-                    refreshDisk(row.getTreeItem());
-                }
-            });
-            return row;
-        });
-
-        fileTree.setOnDragOver(e -> {
-            var db = e.getDragboard();
-            if (db.hasFiles()) {
-                e.acceptTransferModes(TransferMode.COPY);
-            }
-            e.consume();
-        });
-
     }
 
     @FXML
@@ -309,7 +273,8 @@ public class EditorController {
             var fileChooser = new FileChooser();
             fileChooser.setTitle("Import File");
             fileChooser.initialDirectoryProperty()
-                    .setValue(Path.of(preferences.get("LAST_IMPORT_PATH", System.getProperty("user.home"))).toFile());
+                    .setValue(Path.of(preferences.get("LAST_IMPORT_PATH", System.getProperty("user.home")))
+                            .toFile());
 
             File file = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
             if (file != null) preferences.put("LAST_IMPORT_PATH", file.getParentFile().getPath());
@@ -518,13 +483,20 @@ public class EditorController {
     }
 
     private void copyFile(AcceptsImports disk, File file, String filename, int userNum) {
+        ByteBuffer buffer = null;
         try (var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ)) {
-            disk.importFile(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()), filename, userNum);
+            buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+            disk.importFile(buffer, filename, userNum);
         } catch (FileAlreadyExistsException e) {
-            e.printStackTrace();
-            AlertDialogs.fileExistsAlert(rootPane.getScene().getWindow(), e);
+            var confirmed = showConfirmDialog("File " + userNum + ":" + filename + " already exists. Do you wish to overwrite it?", "Confirm Overwrite");
+            if (confirmed) {
+                try {
+                    disk.importFile(buffer, filename, userNum, true);
+                } catch (IOException f) {
+                    AlertDialogs.fileErrorAlert(rootPane.getScene().getWindow(), f);
+                }
+            }
         } catch (IOException e) {
-            e.printStackTrace();
             AlertDialogs.fileErrorAlert(rootPane.getScene().getWindow(), e);
         }
     }
@@ -549,7 +521,11 @@ public class EditorController {
     }
 
     private void copyFilesToCpm(DiskItem diskView, List<File> files, String name) {
-        CopyFileController controller = getCopyFileController(files, name);
+        CopyFileDialog controller = getCopyFileController(files, name);
+
+        if (!controller.showAndWait().orElse(false)) {
+            return;
+        }
 
         var filename = controller.getFilename();
         var userNum = controller.getUserNumber();
@@ -558,34 +534,13 @@ public class EditorController {
         copyFile(diskView, files.get(0), filename, userNum);
     }
 
-    private CopyFileController getCopyFileController(List<File> files, String name) {
-        FXMLLoader fxmlLoader = new FXMLLoader(EditorApp.class.getResource("copy-file-view.fxml"));
-        Stage stage = loadCopyFileView(name, fxmlLoader);
-
-        var controller = (CopyFileController) fxmlLoader.getController();
+    private CopyFileDialog getCopyFileController(List<File> files, String name) {
+        var controller = new CopyFileDialog(rootPane.getScene().getWindow(), "Import File", name);
         // TODO: Support copying one file for now
         controller.setNormalizedFilename(files.get(0).getName());
-        controller.setCopyButtonText(name);
-        if (stage != null) {
-            stage.showAndWait();
-        }
-        return controller;
-    }
 
-    private Stage loadCopyFileView(String title, FXMLLoader fxmlLoader) {
-        Stage stage = new Stage();
-        stage.setTitle(title + " file");
-        stage.initOwner(rootPane.getScene().getWindow());
-        stage.initModality(Modality.APPLICATION_MODAL);
-        try {
-            WindowUtil.positionDialog(rootPane.getScene().getWindow(), stage, 310, 143);
-            stage.setScene(new Scene(fxmlLoader.load(), 310, 143));
-        } catch (IOException e) {
-            e.printStackTrace();;
-            AlertDialogs.unexpectedAlert(rootPane.getScene().getWindow(), e);
-            return null;
-        }
-        return stage;
+        WindowUtil.positionDialog(rootPane.getScene().getWindow(), controller, 310, 143);
+        return controller;
     }
 
     private boolean showConfirmDialog(String prompt, String title) {
@@ -600,4 +555,19 @@ public class EditorController {
         return dialog.showAndWait().orElseThrow();
     }
 
+    @FXML
+    protected void showAboutDialog() {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("About");
+        Package pkg = getClass().getPackage();
+        dialog.setContentText(
+                """
+                        CP/M Filesystem Editor
+
+                        Version: 1.0""");
+        var okButton = new ButtonType("Ok", ButtonType.OK.getButtonData());
+        dialog.getDialogPane().getButtonTypes().addAll(okButton);
+        WindowUtil.positionDialog(rootPane.getScene().getWindow(), dialog);
+        dialog.showAndWait().orElseThrow();
+    }
 }

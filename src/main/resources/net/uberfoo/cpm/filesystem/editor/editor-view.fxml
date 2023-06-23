@@ -8,22 +8,24 @@
         <MenuBar BorderPane.alignment="CENTER">
             <menus>
                 <Menu mnemonicParsing="false" text="File">
-                    <items>
-                        <MenuItem fx:id="openMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenClick" text="Open..." />
-                        <MenuItem fx:id="saveMenuItem" mnemonicParsing="false" onAction="#onFileMenuSaveClick" text="Save..." />
-                        <MenuItem fx:id="openPartDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenPartDiskClick" text="Open Partitioned Disk Image..." />
-                        <MenuItem fx:id="closeMenuItem" disable="true" mnemonicParsing="false" onAction="#onFileMenuCloseClick" text="Close" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="openDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenDiskClick" text="Open Disk..." />
-                        <MenuItem fx:id="flashDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuFlashDiskClick" text="Flash to Disk..." />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" onAction="#onFileMenuExitClick" text="Exit" />
-                    </items>
+                    <MenuItem fx:id="openMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenClick"
+                              text="Open..."/>
+                    <MenuItem fx:id="saveMenuItem" mnemonicParsing="false" onAction="#onFileMenuSaveClick"
+                              text="Save..."/>
+                    <MenuItem fx:id="openPartDiskMenuItem" mnemonicParsing="false"
+                              onAction="#onFileMenuOpenPartDiskClick" text="Open Partitioned Disk Image..."/>
+                    <MenuItem fx:id="closeMenuItem" disable="true" mnemonicParsing="false"
+                              onAction="#onFileMenuCloseClick" text="Close"/>
+                    <SeparatorMenuItem mnemonicParsing="false"/>
+                    <MenuItem fx:id="openDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuOpenDiskClick"
+                              text="Open Disk..."/>
+                    <MenuItem fx:id="flashDiskMenuItem" mnemonicParsing="false" onAction="#onFileMenuFlashDiskClick"
+                              text="Flash to Disk..."/>
+                    <SeparatorMenuItem mnemonicParsing="false"/>
+                    <MenuItem mnemonicParsing="false" onAction="#onFileMenuExitClick" text="Exit"/>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">
-                    <items>
-                        <MenuItem mnemonicParsing="false" text="About" />
-                    </items>
+                    <MenuItem mnemonicParsing="false" onAction="#showAboutDialog" text="About"/>
                 </Menu>
             </menus>
         </MenuBar>

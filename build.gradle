@@ -1,9 +1,12 @@
+import java.time.Instant
+
 plugins {
     id 'java'
     id 'application'
     id 'org.javamodularity.moduleplugin' version '1.8.9'
     id 'org.openjfx.javafxplugin' version '0.0.13'
     id 'org.beryx.jlink' version '2.26.0'
+    id 'net.nemerosa.versioning' version '2.6.1'
 }
 
 group 'net.uberfoo.cpm.filesystem.editor'
@@ -46,6 +49,36 @@ javafx {
     modules = ['javafx.controls', 'javafx.fxml', 'javafx.base']
 }
 
+jar {
+    manifest {
+        attributes(
+                'Name'           : 'net.uberfoo.cpm.filesystem.editor',
+                'Specification-Title'   : 'CPM Filesystem Editor',
+                'Specification-Version' : '1.0',
+                'Specification-Vendor'  : 'Uberfoo Heavy Industries',
+                'Implementation-Title'  : 'net.uberfoo.cpm.filesystem.editor',
+                'Implementation-Version': version,
+                'Implementation-Vendor' : 'Uberfoo Heavy Industries',
+                'Built-By'       : System.properties['user.name'],
+                'Build-Timestamp': Instant.now(),
+                'Build-Revision' : versioning.info.commit,
+                'Created-By'     : "Gradle ${gradle.gradleVersion}",
+                'Build-Jdk'      : "${System.properties['java.version']} (${System.properties['java.vendor']} ${System.properties['java.vm.version']})",
+                'Build-OS'       : "${System.properties['os.name']} ${System.properties['os.arch']} ${System.properties['os.version']}"
+        )
+    }
+}
+
+prepareMergedJarsDir {
+    doLast {
+        delete("${mergedJarsDir}/META-INF/MANIFEST.MF")
+        copy {
+            from ("${buildDir}/tmp/jar/MANIFEST.MF")
+            into "${mergedJarsDir}/META-INF"
+        }
+    }
+}
+
 dependencies {
     implementation('org.kordamp.ikonli:ikonli-javafx:12.3.1')
     implementation("net.uberfoo.cpm:cpmutils:${cpmutilsVersion}")
@@ -59,14 +92,11 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'commons-io:commons-io:2.13.0'
 
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.2'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.14.1'
-
     implementation 'net.java.dev.jna:jna:5.13.0'
     implementation 'net.java.dev.jna:jna-platform:5.13.0'
 
     implementation 'org.aerofx:aerofx:0.2'
-    implementation ('org.jfxtras:jmetro:11.6.15') {
+    implementation ('org.jfxtras:jmetro:11.6.16') {
         exclude group: 'org.openjfx'
     }
 

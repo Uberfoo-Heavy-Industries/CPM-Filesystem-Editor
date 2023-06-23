@@ -32,7 +32,10 @@ public class PartitionTreeView implements CpmItemTreeView, AcceptsImports, DiskI
     }
 
     @Override
-    public void importFile(ByteBuffer buffer, String filename, int userNum) throws IOException {
+    public void importFile(ByteBuffer buffer, String filename, int userNum, boolean overwrite) throws IOException {
+        if (overwrite && disk.findFile(filename, userNum).isPresent()) {
+            disk.deleteFile(filename, userNum);
+        }
         disk.createFile(filename, userNum, new BitSet(11), buffer);
         dirtyProperty.setValue(true);
     }

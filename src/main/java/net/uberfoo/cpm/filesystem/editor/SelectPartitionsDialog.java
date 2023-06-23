@@ -12,6 +12,7 @@ import javafx.stage.Window;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 public class SelectPartitionsDialog extends Dialog<DiskParameterBlockView> {
 
@@ -28,7 +29,8 @@ public class SelectPartitionsDialog extends Dialog<DiskParameterBlockView> {
             selectBox.getItems().addAll(items);
             selectBox.setValue(items.get(0));
 
-            dialogPane.lookupButton(ButtonType.OK).disableProperty().bind(selectBox.valueProperty().map(x -> x == null));
+            dialogPane.lookupButton(ButtonType.OK).disableProperty()
+                    .bind(selectBox.valueProperty().map(Objects::isNull));
 
             initOwner(owner);
             initModality(Modality.APPLICATION_MODAL);
