@@ -1,9 +1,12 @@
+import java.time.Instant
+
 plugins {
     id 'java'
     id 'application'
     id 'org.javamodularity.moduleplugin' version '1.8.9'
     id 'org.openjfx.javafxplugin' version '0.0.13'
     id 'org.beryx.jlink' version '2.26.0'
+    id 'net.nemerosa.versioning' version '2.6.1'
 }
 
 group 'net.uberfoo.cpm.filesystem.editor'
@@ -44,6 +47,36 @@ application {
 javafx {
     version = '20'
     modules = ['javafx.controls', 'javafx.fxml', 'javafx.base']
+}
+
+jar {
+    manifest {
+        attributes(
+                'Name'           : 'net.uberfoo.cpm.filesystem.editor',
+                'Specification-Title'   : 'CPM Filesystem Editor',
+                'Specification-Version' : '1.0',
+                'Specification-Vendor'  : 'Uberfoo Heavy Industries',
+                'Implementation-Title'  : 'net.uberfoo.cpm.filesystem.editor',
+                'Implementation-Version': version,
+                'Implementation-Vendor' : 'Uberfoo Heavy Industries',
+                'Built-By'       : System.properties['user.name'],
+                'Build-Timestamp': Instant.now(),
+                'Build-Revision' : versioning.info.commit,
+                'Created-By'     : "Gradle ${gradle.gradleVersion}",
+                'Build-Jdk'      : "${System.properties['java.version']} (${System.properties['java.vendor']} ${System.properties['java.vm.version']})",
+                'Build-OS'       : "${System.properties['os.name']} ${System.properties['os.arch']} ${System.properties['os.version']}"
+        )
+    }
+}
+
+prepareMergedJarsDir {
+    doLast {
+        delete("${mergedJarsDir}/META-INF/MANIFEST.MF")
+        copy {
+            from ("${buildDir}/tmp/jar/MANIFEST.MF")
+            into "${mergedJarsDir}/META-INF"
+        }
+    }
 }
 
 dependencies {

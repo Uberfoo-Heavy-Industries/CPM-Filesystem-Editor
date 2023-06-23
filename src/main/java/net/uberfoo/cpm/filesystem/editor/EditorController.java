@@ -555,4 +555,19 @@ public class EditorController {
         return dialog.showAndWait().orElseThrow();
     }
 
+    @FXML
+    protected void showAboutDialog() {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("About");
+        Package pkg = getClass().getPackage();
+        dialog.setContentText(
+                """
+                        CP/M Filesystem Editor
+
+                        Version: 1.0""");
+        var okButton = new ButtonType("Ok", ButtonType.OK.getButtonData());
+        dialog.getDialogPane().getButtonTypes().addAll(okButton);
+        WindowUtil.positionDialog(rootPane.getScene().getWindow(), dialog);
+        dialog.showAndWait().orElseThrow();
+    }
 }
