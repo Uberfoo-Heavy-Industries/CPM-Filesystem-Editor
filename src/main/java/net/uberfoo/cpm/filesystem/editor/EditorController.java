@@ -27,6 +27,7 @@ import java.util.prefs.Preferences;
 
 public class EditorController {
 
+    public static final List<DiskPartitionsView> DISK_PARTITIONS_VIEWS = List.of(new DiskPartitionsView("Z80 Retro Badge", PartitionTables.Z80RB_TABLE));
     private final Preferences preferences = Preferences.userNodeForPackage(EditorController.class);
 
     @FXML
@@ -185,8 +186,7 @@ public class EditorController {
     }
 
     private Optional<DiskPartitionsView> getDiskPartitionsView() {
-        var selectPartitionsDialog = new SelectPartTableDialog(rootPane.getScene().getWindow(),
-                List.of(new DiskPartitionsView("Z80 Retro Board", PartitionTables.Z80RB_TABLE)));
+        var selectPartitionsDialog = new SelectPartTableDialog(rootPane.getScene().getWindow(), DISK_PARTITIONS_VIEWS);
 
         WindowUtil.positionDialog(rootPane.getScene().getWindow(), selectPartitionsDialog, selectPartitionsDialog.getWidth(), selectPartitionsDialog.getHeight());
         var result = selectPartitionsDialog.showAndWait();
@@ -390,7 +390,7 @@ public class EditorController {
 
                 if (selection == null) return;
 
-                if (showConfirmDialog("This will overwrite the contents of this device. Are you sure you want to do this?", "Confirm Flash")) {
+                if (!showConfirmDialog("This will overwrite the contents of this device. Are you sure you want to do this?", "Confirm Flash")) {
                     return;
                 }
 
