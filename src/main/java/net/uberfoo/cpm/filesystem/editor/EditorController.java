@@ -3,6 +3,7 @@ package net.uberfoo.cpm.filesystem.editor;
 import javafx.application.Platform;
 import javafx.beans.binding.BooleanExpression;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TreeItemPropertyValueFactory;
@@ -69,6 +70,9 @@ public class EditorController {
     @FXML
     private MenuItem flashDiskMenuItem;
 
+    @FXML
+    private MenuItem treeContextMenuImportBoot;
+
     private TreeItem<CpmItemTreeView> root;
 
     private static int diskNo = 1;
@@ -117,6 +121,38 @@ public class EditorController {
                 .bind(fileTree.getFocusModel().focusedItemProperty()
                         .<Boolean>map(x -> (x.getValue() instanceof PartitionTreeView))
                         .orElse(true));
+
+        treeContextMenuImportBoot.visibleProperty()
+                .bind(BooleanExpression.booleanExpression(fileTree.getFocusModel().focusedItemProperty()
+                        .map(x -> (x.getValue() instanceof DiskItem))
+                        .orElse(false))
+                        .and(BooleanExpression.booleanExpression(BooleanExpression.booleanExpression(
+                                (fileTree.getFocusModel().focusedItemProperty()
+                                        .map(x -> ((DiskItem)x.getValue()).disk().getDpb().getOffsetBlocks() > 0))
+                        )))
+                );
+    }
+
+    @FXML
+    public void onContextMenuImportBootClick(ActionEvent actionEvent) {
+        var fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Boot Tracks");
+        fileChooser.initialDirectoryProperty()
+                .setValue(Path.of(preferences.get("LAST_BOOT_TRACK_PATH", System.getProperty("user.home"))).toFile());
+
+        File file = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
+        if (file == null)  return;
+        preferences.put("LAST_BOOT_TRACK_PATH", file.getParentFile().getPath());
+
+        var disk = ((DiskItem)fileTree.getFocusModel().getFocusedItem().getValue());
+
+        try (var channel = FileChannel.open(file.toPath(), StandardOpenOption.READ)) {
+            var buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+            disk.importBootTracks(buffer);
+        } catch (IOException e) {
+            AlertDialogs.fileErrorAlert(rootPane.getScene().getWindow(), e);
+        }
+
     }
 
     @FXML
@@ -564,7 +600,7 @@ public class EditorController {
                 """
                         CP/M Filesystem Editor
 
-                        Version: 1.0""");
+                        Version: 1.0.1""");
         var okButton = new ButtonType("Ok", ButtonType.OK.getButtonData());
         dialog.getDialogPane().getButtonTypes().addAll(okButton);
         WindowUtil.positionDialog(rootPane.getScene().getWindow(), dialog);
