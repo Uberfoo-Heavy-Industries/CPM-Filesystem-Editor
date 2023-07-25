@@ -45,6 +45,7 @@
                                 <MenuItem fx:id="treeContextMenuDeleteItem" mnemonicParsing="false" onAction="#onContextMenuDeleteClick" text="Delete" />
                                 <MenuItem fx:id="treeContextMenuExportItem" mnemonicParsing="false" onAction="#onContextMenuExportClick" text="Export" />
                                 <MenuItem fx:id="treeContextMenuImportItem" mnemonicParsing="false" onAction="#onContextMenuImportClick" text="Import" />
+                                <MenuItem fx:id="treeContextMenuImportBoot" mnemonicParsing="false" onAction="#onContextMenuImportBootClick" text="Import Boot Tracks" />
                             </items>
                         </ContextMenu>
                     </contextMenu>

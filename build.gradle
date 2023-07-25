@@ -10,7 +10,7 @@ plugins {
 }
 
 group 'net.uberfoo.cpm.filesystem.editor'
-version '1.0.0'
+version '1.0.1'
 
 repositories {
     mavenCentral()
